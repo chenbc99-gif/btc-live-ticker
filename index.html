@@ -551,7 +551,7 @@
       <div class="top-row">
         <div>
           <h1>BTC盯盘</h1>
-          <div class="sub">多币种 · 三选二（BDCP持股 + 一目均衡表 + MA200）+ 牛市状态 + BTC 周期估值（ahr999/Mayer/Pi/PowerLaw/Puell·ETF优化）；支撑/阻力（结构优先·ATR极值聚类·近端昨高低）只显示现价上下最近档位；币圈快讯优先律动 · 近 6 小时。点选币种切换详情；点「K线」弹窗看蜡烛图。只提醒，不下单。非投资建议。</div>
+          <div class="sub">多币种 · 三选二（BDCP持股 + 一目均衡表 + MA200）+ 牛市状态 + BTC 周期估值（ahr999/Mayer/Pi/PowerLaw/Puell·ETF优化）；支撑/阻力（结构优先·ATR近端真实价聚类·近端昨高低）只显示现价上下最近档位；币圈快讯优先律动 · 近 6 小时。点选币种切换详情；点「K线」弹窗看蜡烛图。只提醒，不下单。非投资建议。</div>
         </div>
         <span class="pill"><span id="dot" class="dot"></span><span id="conn">连接中…</span></span>
       </div>
@@ -718,7 +718,7 @@
       </div>
     </div>
 
-    <p class="note blk-note">规则：策略仅用已收盘 UTC 日线（不含当日未收盘 K）；三选二至少 2 票看多则持有；牛市状态 = 收盘价在 200 日均线上方。支撑/阻力 = 日线摆动(左右各3根确认)·近200根·0.5×ATR聚类(代表价取簇内极值而非均值)，辅ISO自然周近8周高低+昨高低+近5日高低；过滤贴价(<0.35×ATR)并以新旧加权选取；经典枢轴仅在附近无结构位时补位；只显示现价上下最近各1–2档（参考位，非预测）。快讯：优先律动 BlockBeats 与 Tree News，辅以其它来源；只保留约 6 小时内重要条目；英文标题自动译成中文。BTC 另显「周期估值·ETF优化」：ahr999/Mayer/2年均线倍数/Pi距金叉/Power Law偏离/Puell近似；合流热度为近2年分位均值。固定旧阈值已钝化，仅供参考。超买超卖用日线 RSI(14)：≥70 超买、≤30 超卖；同框补充 24h高低与区间位置（币安 ticker）、距MA200%（已收盘日线）、USDT-M 资金费率（币安期货 premiumIndex）、日线 ATR(14)%、恐惧贪婪（alternative.me）、BTC/ETH 主导率（CoinGecko）。行情来自币安公开接口（BTC/ETH/SOL/BNB/HYPE/ZEC）。只提醒，不下单。非投资建议。</p>
+    <p class="note blk-note">规则：策略仅用已收盘 UTC 日线（不含当日未收盘 K）；三选二至少 2 票看多则持有；牛市状态 = 收盘价在 200 日均线上方。支撑/阻力 = 日线摆动(左右各3根确认)·近200根·0.5×ATR聚类(代表价取簇内近端较新的真实高低，非均值/非远端旧极值)，辅ISO自然周近8周高低+昨高低+近5日高低；聚类前过滤贴价(<0.35×ATR)并以新旧加权选取；经典枢轴仅在附近无结构位时补位；只显示现价上下最近各1–2档（参考位，非预测）。快讯：优先律动 BlockBeats 与 Tree News，辅以其它来源；只保留约 6 小时内重要条目；英文标题自动译成中文。BTC 另显「周期估值·ETF优化」：ahr999/Mayer/2年均线倍数/Pi距金叉/Power Law偏离/Puell近似；合流热度为近2年分位均值。固定旧阈值已钝化，仅供参考。超买超卖用日线 RSI(14)：≥70 超买、≤30 超卖；同框补充 24h高低与区间位置（币安 ticker）、距MA200%（已收盘日线）、USDT-M 资金费率（币安期货 premiumIndex）、日线 ATR(14)%、恐惧贪婪（alternative.me）、BTC/ETH 主导率（CoinGecko）。行情来自币安公开接口（BTC/ETH/SOL/BNB/HYPE/ZEC）。只提醒，不下单。非投资建议。</p>
   </div>
 
   <div class="tip-backdrop" id="tipModal" aria-hidden="true">
@@ -2004,10 +2004,26 @@ function weeklyHLFromDaily(highs, lows, dates, weeks){
 }
 
 function clusterMeta(metas, ref, below, tol, maxKeep, atr){
+  const atrV = atr || 1;
+  const srcRank = {swing:4, week:3, local:3, day:2, pivot:1};
+  const score = (m) => Math.abs(m.price - ref) + 0.55 * atrV * (((m.age == null) ? 999 : m.age) / 30);
+  const pickRep = (members) => {
+    // 代表价取簇内“离现价近 + 相对新”的真实高低（非均值、非远端旧极值）
+    let best = members[0];
+    for (let i = 1; i < members.length; i++){
+      const m = members[i];
+      const sb = score(best), sm = score(m);
+      if (sm < sb - 1e-12) best = m;
+      else if (Math.abs(sm - sb) <= 1e-12){
+        if ((srcRank[m.src]||0) > (srcRank[best.src]||0)) best = m;
+        else if ((srcRank[m.src]||0) === (srcRank[best.src]||0) && ((m.age==null)?999:m.age) < ((best.age==null)?999:best.age)) best = m;
+      }
+    }
+    return best;
+  };
   const cands = metas.filter(m => below ? m.price < ref : m.price > ref)
     .sort((a,b)=> below ? (b.price - a.price) : (a.price - b.price));
   const groups = [];
-  const srcRank = {swing:4, week:3, local:3, day:2, pivot:1};
   for (const m of cands){
     const g = groups.length ? groups[groups.length-1] : null;
     // 用种子价判距，避免极值漂移造成单链接“链式粘连”
@@ -2015,16 +2031,11 @@ function clusterMeta(metas, ref, below, tol, maxKeep, atr){
       g.n += 1;
       g.touches += 1;
       g.prices.push(m.price);
-      g.ages.push(m.age == null ? 999 : m.age);
-      g.srcs.push(m.src);
-      // 代表价取簇内真实极值（非均值），杜绝幽灵价
-      g.rep = below ? Math.min(...g.prices) : Math.max(...g.prices);
-      g.age = Math.min(...g.ages);
-      let bestSrc = g.src;
-      for (const s of g.srcs){
-        if ((srcRank[s]||0) > (srcRank[bestSrc]||0)) bestSrc = s;
-      }
-      g.src = bestSrc;
+      g.members.push(m);
+      const best = pickRep(g.members);
+      g.rep = best.price;
+      g.age = best.age == null ? 999 : best.age;
+      g.src = best.src;
     } else {
       groups.push({
         seed: m.price,
@@ -2034,12 +2045,10 @@ function clusterMeta(metas, ref, below, tol, maxKeep, atr){
         src: m.src,
         age: m.age == null ? 999 : m.age,
         prices: [m.price],
-        ages: [m.age == null ? 999 : m.age],
-        srcs: [m.src]
+        members: [m]
       });
     }
   }
-  const atrV = atr || 1;
   // 距离 + 旧位惩罚，避免半年前旧摆动压过近期结构
   groups.sort((a,b)=>{
     const sa = Math.abs(a.rep - ref) + 0.55 * atrV * ((a.age||0) / 30);
@@ -2057,11 +2066,11 @@ function clusterMeta(metas, ref, below, tol, maxKeep, atr){
 }
 
 /**
- * 支撑/阻力（日线，结构优先 v2）：
+ * 支撑/阻力（日线，结构优先 v2.1）：
  * - 摆动确认 left=right=3；回看约 200 根已收盘日线
- * - 聚类宽度 0.5×ATR(14)；代表价用簇内极值（非均值）
+ * - 聚类宽度 0.5×ATR(14)；代表价取簇内真实高低中“近端+较新”者（非均值、非远端旧极值）
  * - ISO 自然周近 8 周高低 + 昨高低 + 近5日高低
- * - 过滤贴价噪音（<0.35×ATR）；选取带轻度旧位惩罚
+ * - 聚类前先滤贴价噪音（<0.35×ATR）；选取带轻度旧位惩罚
  * - 经典枢轴仅在附近无结构位时补位
  * - 只展示现价上下最近各 1–2 档（第二档须在 10% 内且间距≥0.45×ATR）
  * 仅供参考，非预测。
@@ -2088,8 +2097,8 @@ function computeSR(id){
 
   const ph = swingPivots(H, 3, 3, true);
   const pl = swingPivots(L, 3, 3, false);
-  const metaH = ph.map(x => ({price: x.price, src: 'swing', age: nn - 1 - x.i}));
-  const metaL = pl.map(x => ({price: x.price, src: 'swing', age: nn - 1 - x.i}));
+  let metaH = ph.map(x => ({price: x.price, src: 'swing', age: nn - 1 - x.i}));
+  let metaL = pl.map(x => ({price: x.price, src: 'swing', age: nn - 1 - x.i}));
   for (const w of weeklyHLFromDaily(H, L, D, 8)){
     const item = {price: w.price, src: 'week', age: w.age == null ? 999 : w.age};
     if (w.kind === 'r') metaH.push(item);
@@ -2102,6 +2111,9 @@ function computeSR(id){
     metaH.push({price: Math.max(...H.slice(-5)), src: 'local', age: 0});
     metaL.push({price: Math.min(...L.slice(-5)), src: 'local', age: 0});
   }
+  // 聚类前先丢掉贴价噪音，避免旧摆动贴着现价把昨高低吸进同一簇
+  metaH = metaH.filter(m => (m.price - ref) >= minDist);
+  metaL = metaL.filter(m => (ref - m.price) >= minDist);
 
   const resists = clusterMeta(metaH, ref, false, clusterTol, 8, atr);
   const supports = clusterMeta(metaL, ref, true, clusterTol, 8, atr);
@@ -2154,12 +2166,15 @@ function computeSR(id){
   for (const lv of levels){
     const prev = dedup[dedup.length-1];
     if (prev && Math.abs(prev.price - lv.price) < mergeTol){
-      // 同簇保留侧向极值，其次更高优先级 / 更新
+      // 同簇保留离现价更近的真实位，其次更高优先级 / 更新
       let keepNew = false;
-      if (lv.kind === 's' && lv.price < prev.price) keepNew = true;
-      else if (lv.kind === 'r' && lv.price > prev.price) keepNew = true;
-      else if ((prio[lv.src]||0) > (prio[prev.src]||0)) keepNew = true;
-      else if ((prio[lv.src]||0) === (prio[prev.src]||0) && (lv.age||999) < (prev.age||999)) keepNew = true;
+      const prevDist = Math.abs(prev.price - ref);
+      const newDist = Math.abs(lv.price - ref);
+      if (newDist < prevDist - 1e-9) keepNew = true;
+      else if (Math.abs(newDist - prevDist) <= 1e-9){
+        if ((prio[lv.src]||0) > (prio[prev.src]||0)) keepNew = true;
+        else if ((prio[lv.src]||0) === (prio[prev.src]||0) && (lv.age||999) < (prev.age||999)) keepNew = true;
+      }
       if (keepNew) dedup[dedup.length-1] = lv;
       continue;
     }
