@@ -397,7 +397,6 @@
     .kbtn:hover, .kbtn:active { background:#223049; border-color:rgba(91,157,255,.5); }
     .modal-backdrop {
       display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.62);
-      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
       align-items:center; justify-content:center; padding:12px;
     }
     .modal-backdrop.open { display:flex; }
@@ -405,6 +404,7 @@
       width:min(960px, 100%); height:min(640px, 92dvh); background:var(--card);
       border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column;
       overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.45);
+      transform:translateZ(0);
     }
     .modal-head {
       display:flex; align-items:center; justify-content:space-between; gap:8px;
@@ -424,8 +424,19 @@
       width:34px; height:34px; border-radius:10px; font-size:18px; line-height:1; cursor:pointer;
       flex:0 0 auto;
     }
-    .modal-body { flex:1; min-height:0; position:relative; background:#0b0f14; }
-    #kChart { width:100%; height:100%; }
+    .modal-body {
+      flex:1; min-height:0; position:relative; background:#0b0f14;
+      touch-action:none; overscroll-behavior:none;
+      -webkit-user-select:none; user-select:none;
+    }
+    #kChart {
+      width:100%; height:100%;
+      touch-action:none; overscroll-behavior:none;
+      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+      cursor:grab;
+    }
+    #kChart.is-panning { cursor:grabbing; }
+    #kChart canvas { touch-action:none; display:block; }
     .modal-status {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
       color:var(--muted); font-size:13px; pointer-events:none; z-index:2;
@@ -1163,6 +1174,11 @@ function selectAsset(id){
   renderSelected();
 }
 
+function isKlineModalOpen(){
+  const m = document.getElementById('kModal');
+  return !!(m && m.classList.contains('open'));
+}
+
 function applyTicker(id, t){
   const st = state[id];
   if (!st) return;
@@ -1181,6 +1197,13 @@ function applyTicker(id, t){
     const up = pctChange >= 0;
     chgEl.className = 'chg ' + (up?'up':'down');
     chgEl.textContent = (up?'+':'') + pctChange.toFixed(2) + '%';
+  }
+  if (isKlineModalOpen()) {
+    if (id === kAssetId) {
+      const kPx = $('kPrice');
+      if (kPx) kPx.textContent = '$'+fmtPx(id, price);
+    }
+    return;
   }
   if (id === selected && st.srLevels.length) renderSR();
   if (st.daily) computeSR(id);
@@ -3112,6 +3135,7 @@ let kAssetId = null;
 let kInterval = '15m';
 let kLibPromise = null;
 let kResizeObs = null;
+let kPanDetach = null;
 
 // Enough bars so EMA200 can form, plus visible history
 const K_LIMIT = { '15m': 500, '1h': 500, '4h': 500, '1d': 500, '1w': 500, '1M': 500 };
@@ -3147,9 +3171,208 @@ function loadLwCharts(){
 }
 
 function destroyKChart(){
+  if (kPanDetach) { try { kPanDetach(); } catch(e){} kPanDetach = null; }
   if (kResizeObs) { try { kResizeObs.disconnect(); } catch(e){} kResizeObs = null; }
   if (kChart) { try { kChart.remove(); } catch(e){} }
   kChart = null; kSeries = null; kVol = null; kEmaSeries = {};
+}
+
+function kPaneSurface(host){
+  // Prefer the main pane cell; do not depend on canvas pixel size (often 0 at attach time).
+  const td = host.querySelector('table tr:first-child td:nth-child(2)');
+  if (td) return td.querySelector('div') || td;
+  const canvases = host.querySelectorAll('canvas');
+  let best = null, area = -1;
+  canvases.forEach(c => {
+    const a = (c.clientWidth || 0) * (c.clientHeight || 0);
+    if (a >= area) { area = a; best = c; }
+  });
+  return (best && best.parentElement) || host;
+}
+
+function normalizeWheelDelta(delta, mode){
+  if (mode === 1) return delta * 16;
+  if (mode === 2) return delta * 800;
+  return delta;
+}
+
+/** Pointer pan / pinch / wheel, rAF-batched, with flick inertia (Binance-like). */
+function attachKChartPan(chart, host){
+  if (kPanDetach) { try { kPanDetach(); } catch(e){} kPanDetach = null; }
+  if (!chart || !host) return;
+  const surface = kPaneSurface(host);
+  const pointers = new Map();
+  let mode = 'none';
+  let lastX = 0, lastT = 0, velX = 0, origOffset = 0, accDx = 0;
+  let pinchDist0 = 1, pinchRange0 = null;
+  let raf = 0, pendingPos = null, inertiaId = 0, alive = true;
+
+  const ts = () => chart.timeScale();
+  const spacing = () => {
+    try {
+      const s = ts().options().barSpacing;
+      return (s && s > 0) ? s : 6;
+    } catch (e) { return 6; }
+  };
+  function flush(){
+    raf = 0;
+    if (!alive || pendingPos == null || !kChart) return;
+    const p = pendingPos; pendingPos = null;
+    try { ts().scrollToPosition(p, false); } catch(e){}
+  }
+  function setPos(pos){
+    pendingPos = pos;
+    if (!raf) raf = requestAnimationFrame(flush);
+  }
+  function stopInertia(){
+    if (inertiaId) { cancelAnimationFrame(inertiaId); inertiaId = 0; }
+  }
+  function zoomAround(factor, clientX, baseRange){
+    if (!alive || !kChart) return;
+    let range = baseRange;
+    try { if (!range) range = ts().getVisibleLogicalRange(); } catch(e){ return; }
+    if (!range || !isFinite(range.from) || !isFinite(range.to)) return;
+    const width = range.to - range.from;
+    if (!(width > 0)) return;
+    let newWidth = width / factor;
+    if (newWidth < 12) newWidth = 12;
+    if (newWidth > 600) newWidth = 600;
+    const rect = surface.getBoundingClientRect();
+    const w = rect.width || 1;
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / w));
+    const anchor = range.from + width * frac;
+    try {
+      ts().setVisibleLogicalRange({ from: anchor - newWidth * frac, to: anchor + newWidth * (1 - frac) });
+    } catch(e){}
+  }
+  function startInertia(v){
+    if (!alive || Math.abs(v) < 0.12) return;
+    v = Math.max(-3, Math.min(3, v));
+    let last = performance.now();
+    function step(now){
+      if (!alive || !kChart) { inertiaId = 0; return; }
+      const dt = Math.min(40, Math.max(1, now - last));
+      last = now;
+      v *= Math.exp(-0.0038 * dt);
+      if (Math.abs(v) < 0.02) { inertiaId = 0; return; }
+      try { ts().scrollToPosition(ts().scrollPosition() - (v * dt) / spacing(), false); } catch(e){}
+      inertiaId = requestAnimationFrame(step);
+    }
+    inertiaId = requestAnimationFrame(step);
+  }
+  function onDown(e){
+    if (!alive || !kChart) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    stopInertia();
+    try { surface.setPointerCapture(e.pointerId); } catch(err){}
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size >= 2) {
+      mode = 'pinch';
+      const pts = [...pointers.values()];
+      const a = pts[0], b = pts[1];
+      pinchDist0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      try { pinchRange0 = ts().getVisibleLogicalRange(); } catch(err){ pinchRange0 = null; }
+    } else {
+      mode = 'pan';
+      lastX = e.clientX;
+      lastT = performance.now();
+      velX = 0;
+      try { origOffset = ts().scrollPosition(); } catch(err){ origOffset = 0; }
+      accDx = 0;
+      host.classList.add('is-panning');
+    }
+    e.preventDefault();
+  }
+  function onMove(e){
+    if (!alive || !kChart || !pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mode === 'pinch' && pointers.size >= 2) {
+      const pts = [...pointers.values()];
+      const a = pts[0], b = pts[1];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      zoomAround(dist / pinchDist0, (a.x + b.x) / 2, pinchRange0);
+      e.preventDefault();
+      return;
+    }
+    if (mode === 'pan') {
+      const now = performance.now();
+      const dx = e.clientX - lastX;
+      const dt = Math.max(1, now - lastT);
+      const inst = dx / dt;
+      const a = Math.min(1, dt / 32);
+      velX = velX * (1 - a) + inst * a;
+      lastX = e.clientX;
+      lastT = now;
+      accDx += dx;
+      setPos(origOffset - accDx / spacing());
+      e.preventDefault();
+    }
+  }
+  function onUp(e){
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    try { if (surface.hasPointerCapture && surface.hasPointerCapture(e.pointerId)) surface.releasePointerCapture(e.pointerId); } catch(err){}
+    if (mode === 'pinch') {
+      if (pointers.size === 1) {
+        const p = [...pointers.values()][0];
+        mode = 'pan';
+        lastX = p.x; lastT = performance.now(); velX = 0;
+        try { origOffset = ts().scrollPosition(); } catch(err){ origOffset = 0; }
+        accDx = 0;
+      } else {
+        mode = 'none';
+        host.classList.remove('is-panning');
+      }
+      return;
+    }
+    if (mode === 'pan' && pointers.size === 0) {
+      mode = 'none';
+      host.classList.remove('is-panning');
+      if (raf) { cancelAnimationFrame(raf); flush(); }
+      const stalled = (performance.now() - lastT) > 80;
+      startInertia(stalled ? 0 : velX);
+    }
+  }
+  function onWheel(e){
+    if (!alive || !kChart) return;
+    stopInertia();
+    const dx = normalizeWheelDelta(e.deltaX, e.deltaMode);
+    const dy = normalizeWheelDelta(e.deltaY, e.deltaMode);
+    if (!e.ctrlKey && !e.metaKey && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
+      try { ts().scrollToPosition(ts().scrollPosition() - dx / spacing(), false); } catch(err){}
+      e.preventDefault();
+      return;
+    }
+    const zoomDelta = (e.ctrlKey || e.metaKey) ? dy : dy;
+    if (!zoomDelta) return;
+    const factor = Math.exp(-zoomDelta * 0.0015);
+    zoomAround(factor, e.clientX, null);
+    e.preventDefault();
+  }
+  function preventTouch(e){ e.preventDefault(); }
+
+  const po = { passive: false };
+  surface.addEventListener('pointerdown', onDown, po);
+  surface.addEventListener('pointermove', onMove, po);
+  surface.addEventListener('pointerup', onUp, po);
+  surface.addEventListener('pointercancel', onUp, po);
+  host.addEventListener('wheel', onWheel, po);
+  surface.addEventListener('touchstart', preventTouch, po);
+  surface.addEventListener('touchmove', preventTouch, po);
+
+  kPanDetach = function(){
+    alive = false;
+    stopInertia();
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    host.classList.remove('is-panning');
+    surface.removeEventListener('pointerdown', onDown, po);
+    surface.removeEventListener('pointermove', onMove, po);
+    surface.removeEventListener('pointerup', onUp, po);
+    surface.removeEventListener('pointercancel', onUp, po);
+    host.removeEventListener('wheel', onWheel, po);
+    surface.removeEventListener('touchstart', preventTouch, po);
+    surface.removeEventListener('touchmove', preventTouch, po);
+  };
 }
 
 /** Pine-style EMA: seed = SMA of first length bars */
@@ -3258,16 +3481,33 @@ async function loadAndDrawKlines(){
     destroyKChart();
     const el = $('kChart');
     el.innerHTML = '';
+    const useCustomPan = typeof PointerEvent !== 'undefined';
     kChart = LW.createChart(el, {
+      autoSize: true,
       layout: { background: { color: '#0b0f14' }, textColor: '#8fa0b8' },
       grid: { vertLines: { color: '#1c2736' }, horzLines: { color: '#1c2736' } },
       rightPriceScale: { borderColor: '#243041' },
       timeScale: {
         borderColor: '#243041',
         timeVisible: (kInterval !== '1d' && kInterval !== '1w' && kInterval !== '1M'),
-        secondsVisible: false
+        secondsVisible: false,
+        lockVisibleTimeRangeOnResize: true,
+        minBarSpacing: 2
       },
       crosshair: { mode: 0 },
+      handleScroll: {
+        mouseWheel: false,
+        pressedMouseMove: !useCustomPan,
+        horzTouchDrag: !useCustomPan,
+        vertTouchDrag: !useCustomPan
+      },
+      handleScale: {
+        mouseWheel: false,
+        pinch: !useCustomPan,
+        axisPressedMouseMove: true,
+        axisDoubleClickReset: true
+      },
+      kineticScroll: { touch: !useCustomPan, mouse: false },
       width: el.clientWidth,
       height: el.clientHeight
     });
@@ -3310,13 +3550,7 @@ async function loadAndDrawKlines(){
       kChart.timeScale().fitContent();
     }
 
-    if (window.ResizeObserver) {
-      kResizeObs = new ResizeObserver(() => {
-        if (!kChart) return;
-        kChart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
-      });
-      kResizeObs.observe(el);
-    }
+    if (useCustomPan) attachKChartPan(kChart, el);
 
     updateEmaLegend(emaMap);
     const last = candles[candles.length-1];
@@ -3346,12 +3580,6 @@ function setupKlineModal(){
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.classList.contains('open')) closeKlineModal();
-  });
-  window.addEventListener('resize', () => {
-    if (kChart && $('kChart')) {
-      const el = $('kChart');
-      kChart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
-    }
   });
 }
 
