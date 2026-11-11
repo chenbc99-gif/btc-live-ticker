@@ -430,13 +430,21 @@
       -webkit-user-select:none; user-select:none;
     }
     #kChart {
-      width:100%; height:100%;
+      position:relative; z-index:1;
+      width:100%; height:100%; background:#0b0f14;
+      overflow:hidden;
       touch-action:none; overscroll-behavior:none;
       -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
       cursor:grab;
     }
     #kChart.is-panning { cursor:grabbing; }
     #kChart canvas { touch-action:none; display:block; }
+    /* Let the right price scale float over the pane (Binance-style) */
+    #kChart .tv-lightweight-charts { overflow:visible !important; }
+    #kChart table tr:first-child td:last-child {
+      position:absolute; top:0; right:0; z-index:3;
+      background:transparent !important;
+    }
     .modal-status {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
       color:var(--muted); font-size:13px; pointer-events:none; z-index:2;
@@ -3196,6 +3204,43 @@ function normalizeWheelDelta(delta, mode){
   return delta;
 }
 
+/**
+ * Pane is drawn full-bleed and the right scale is overlaid.
+ * lightweight-charts reserves scale width, so the chart box is wider than
+ * the visible host by that amount and the extra column is clipped.
+ */
+function fitKChartOverlay(){
+  if (!kChart) return;
+  const el = $('kChart');
+  const w = el.clientWidth;
+  const h = el.clientHeight;
+  if (w < 2 || h < 2) return;
+  let axis = 0;
+  try { axis = kChart.priceScale('right').width() || 0; } catch (e) {}
+  const raw = Math.ceil(w + axis);
+  const targetW = raw + (raw % 2);
+  const targetH = (h - (h % 2)) || h;
+  const chartEl = el.querySelector('.tv-lightweight-charts');
+  const curW = chartEl ? parseInt(chartEl.style.width, 10) : 0;
+  const curH = chartEl ? parseInt(chartEl.style.height, 10) : 0;
+  if (curW === targetW && curH === targetH) return;
+  try { kChart.resize(targetW, targetH); } catch (e) {}
+}
+
+function bindKChartOverlay(el){
+  if (kResizeObs) { try { kResizeObs.disconnect(); } catch(e){} kResizeObs = null; }
+  if (typeof ResizeObserver === 'undefined') {
+    fitKChartOverlay();
+    return;
+  }
+  const obs = new ResizeObserver(() => { fitKChartOverlay(); });
+  obs.observe(el);
+  const axis = el.querySelector('table tr:first-child td:last-child');
+  if (axis) obs.observe(axis);
+  kResizeObs = obs;
+  fitKChartOverlay();
+}
+
 /** Pointer pan / pinch / wheel, rAF-batched, with flick inertia (Binance-like). */
 function attachKChartPan(chart, host){
   if (kPanDetach) { try { kPanDetach(); } catch(e){} kPanDetach = null; }
@@ -3483,10 +3528,10 @@ async function loadAndDrawKlines(){
     el.innerHTML = '';
     const useCustomPan = typeof PointerEvent !== 'undefined';
     kChart = LW.createChart(el, {
-      autoSize: true,
-      layout: { background: { color: '#0b0f14' }, textColor: '#8fa0b8' },
+      autoSize: false,
+      layout: { background: { color: 'transparent' }, textColor: '#8fa0b8' },
       grid: { vertLines: { color: '#1c2736' }, horzLines: { color: '#1c2736' } },
-      rightPriceScale: { borderColor: '#243041' },
+      rightPriceScale: { borderVisible: false, borderColor: 'transparent' },
       timeScale: {
         borderColor: '#243041',
         timeVisible: (kInterval !== '1d' && kInterval !== '1w' && kInterval !== '1M'),
@@ -3551,6 +3596,8 @@ async function loadAndDrawKlines(){
     }
 
     if (useCustomPan) attachKChartPan(kChart, el);
+    bindKChartOverlay(el);
+    requestAnimationFrame(() => requestAnimationFrame(fitKChartOverlay));
 
     updateEmaLegend(emaMap);
     const last = candles[candles.length-1];
