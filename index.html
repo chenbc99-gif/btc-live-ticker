@@ -42,7 +42,7 @@
       content:''; width:6px; height:6px; border-radius:50%; background:var(--accent);
       box-shadow:0 0 0 3px rgba(124,108,255,.18);
     }
-    .synth-meta { font-size:10.5px; color:var(--muted); font-weight:550; white-space:nowrap; }
+    .synth-meta { font-size:10.5px; color:var(--muted); font-weight:550; }
     .synth-list {
       margin:0; padding:0; list-style:none; display:grid; gap:3px;
     }
@@ -252,6 +252,34 @@
     .lvl-right { text-align:right; font-variant-numeric:tabular-nums; }
     .lvl-px { color:var(--text); font-weight:600; font-size:13px; }
     .lvl-dist { color:var(--muted); font-size:11px; }
+    .key-strip {
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr));
+      gap:4px; margin:1px 0 6px;
+    }
+    .key-chip {
+      display:flex; flex-direction:column; gap:1px; min-width:0;
+      padding:3px 7px 4px; border-radius:8px;
+      background:var(--card2); border:1px solid var(--line);
+    }
+    .key-chip .k {
+      display:flex; align-items:baseline; justify-content:space-between; gap:4px;
+      color:var(--muted); font-size:10px; font-weight:650; line-height:1.2;
+      white-space:nowrap; overflow:hidden;
+    }
+    .key-chip .k .nm { display:inline-flex; align-items:baseline; gap:3px; min-width:0; overflow:hidden; }
+    .key-chip .k b { font-weight:700; overflow:hidden; text-overflow:ellipsis; }
+    .key-chip .k em { font-style:normal; color:var(--orange); font-weight:650; font-size:9px; flex:0 0 auto; }
+    .key-chip .k .d { color:var(--muted2); font-weight:650; font-size:9px; flex:0 0 auto; font-variant-numeric:tabular-nums; }
+    .key-chip .v {
+      color:var(--text); font-size:12px; font-weight:700; line-height:1.2;
+      font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .key-chip.above { border-color:rgba(255,107,107,.3); }
+    .key-chip.above .v { color:var(--down); }
+    .key-chip.below { border-color:rgba(61,214,140,.3); }
+    .key-chip.below .v { color:var(--up); }
+    .key-chip.ma { border-color:rgba(240,160,75,.5); }
+    .key-chip.ma .v { color:var(--orange); }
 
     .news-card { display:flex; flex-direction:column; min-height:0; height:100%; }
     .news-list {
@@ -570,14 +598,14 @@
       <div class="top-row">
         <div>
           <h1>BTC盯盘</h1>
-          <div class="sub">多币种 · 三选二（BDCP持股 + 一目均衡表 + MA200）+ 牛市状态 + BTC 周期估值（ahr999/Mayer/Pi/PowerLaw/Puell·ETF优化）；支撑/阻力（结构优先 v2.3·4小时近端真实高低·ATR近端真实价聚类·极性翻转）只显示现价上下最近档位；币圈快讯优先律动 · 近 6 小时。点选币种切换详情；点「K线」弹窗看蜡烛图。只提醒，不下单。非投资建议。</div>
+          <div class="sub">多币种 · 三选二（BDCP持股 + 一目均衡表 + MA200）+ 牛市状态 + BTC 周期估值（ahr999/Mayer/Pi/PowerLaw/Puell·ETF优化）；支撑/阻力（结构优先 v3·关键位+阻尼ATR·近端具体命名）只显示现价上下最近档位；币圈快讯优先律动 · 近 6 小时。点选币种切换详情；点「K线」弹窗看蜡烛图。只提醒，不下单。非投资建议。</div>
         </div>
         <span class="pill"><span id="dot" class="dot"></span><span id="conn">连接中…</span></span>
       </div>
       <div class="synth" id="synthBox" aria-live="polite">
         <div class="synth-head">
           <b>综合分析</b>
-          <span class="synth-meta" id="synthMeta">加载中… · 约每2小时</span>
+          <span class="synth-meta" id="synthMeta">加载中…</span>
         </div>
         <ul class="synth-list" id="synthList">
           <li class="mute">加载中…</li>
@@ -618,7 +646,7 @@
     </div>
 
     <div class="card blk-sr">
-        <div class="label">支撑 / 阻力（最近档） <span class="tag" id="selSym2">BTC</span></div>
+        <div class="label">支撑 / 阻力（结构优先 v3） <span class="tag" id="selSym2">BTC</span></div>
         <div id="srBody" class="quiet">日线加载后计算…</div>
       </div>
 
@@ -632,7 +660,7 @@
         <div class="label">三选二·牛市版 <span class="tag" id="selSym">BTC</span></div>
         <div style="margin:4px 0 6px">
           <span id="t2pos" class="status neutral">计算中</span>
-          <span style="margin-left:8px;font-size:12px;color:var(--muted)">看多票数 <b id="t2votes" style="color:var(--text)">—</b> / 3</span>
+            <span style="margin-left:8px;font-size:12px;color:var(--muted)">看多票数 <b id="t2votes" style="color:var(--text)">—</b><span id="t2voteDen"> / 3</span></span>
         </div>
         <div class="vote-row"><span class="name">BDCP持股</span><span id="t2bd" class="status neutral">—</span></div>
         <div class="vote-row"><span class="name">一目云上</span><span id="t2ichi" class="status neutral">—</span></div>
@@ -737,7 +765,7 @@
       </div>
     </div>
 
-    <p class="note blk-note">规则：策略仅用已收盘 UTC 日线（不含当日未收盘 K）；三选二至少 2 票看多则持有；牛市状态 = 收盘价在 200 日均线上方。支撑/阻力（结构优先 v2.3） = 日线摆动(左右各3根确认)·近200根·0.5×ATR聚类(代表价取簇内离现价更近的真实高低，非均值/非远端旧极值)，辅已收盘4小时摆动(约120日，跌破/升破后换边)+近端4小时与近6小时高低+ISO自然周近8周高低+昨高低+近5日高低；昨高低/近5日高低/ISO周高低/4小时与小时近端跌破或升破后按极性转到现价另一侧；已确认日线摆动仍按高点阻力、低点支撑，避免远年摆动换边吞掉近端结构；近端贴价过滤约0.12×ATR（且不少于现价0.35%），日线摆动与经典枢轴仍为0.35×ATR；经典枢轴仅在附近无结构位时补位，且不得出现在现价错误一侧；只显示现价上下最近各1–2档（参考位，非预测）。快讯：优先律动 BlockBeats 与 Tree News，辅以其它来源；只保留约 6 小时内重要条目；英文标题自动译成中文。BTC 另显「周期估值·ETF优化」：ahr999/Mayer/2年均线倍数/Pi距金叉/Power Law偏离/Puell近似；合流热度为近2年分位均值。固定旧阈值已钝化，仅供参考。超买超卖用日线 RSI(14)：≥70 超买、≤30 超卖；同框补充 24h高低与区间位置（币安 ticker）、距MA200%（已收盘日线）、USDT-M 资金费率（币安期货 premiumIndex）、日线 ATR(14)%、恐惧贪婪（alternative.me）、BTC/ETH 主导率（CoinGecko）。行情来自币安公开接口（BTC/ETH/SOL/BNB/HYPE/ZEC）。只提醒，不下单。非投资建议。</p>
+    <p class="note blk-note">规则：策略仅用已收盘 UTC 日线（不含当日未收盘 K）；三选二至少 2 票看多则持有；牛市状态 = 收盘价在 200 日均线上方。支撑/阻力（结构优先 v3） = 顶部关键位（今高低、昨高低、ISO周高低、24h高低；未收盘单独标注；SMA200 仅在距现价 10% 以内列入），不聚类、不按 ATR 过滤。结构梯仍用已收盘日线摆动（左右各3根、近200根，高点阻力、低点支撑，不换边），并加入未收盘的今日高低、当前4小时高低与本周高低（标注未收盘）；不使用正在走的1小时高低。另有已收盘约12小时极值、已收盘4小时摆动（约120日）与近15日4小时高低、ISO近8周、昨高低、近5日高低。聚类和贴价过滤用阻尼 ATR = min(真实ATR14, 1.15×近14根日线真实波幅中位数)；页面上的 ATR% 仍是未阻尼的 ATR14。簇宽 min(0.28×阻尼ATR, 现价0.45%)。代表价按重要性：今/昨/周/24h 优先，其次约15日内的4小时，再次小时或更旧摆动；同一级再取离现价更近、触碰更多的价。普通噪音过滤 max(现价0.12%, min(0.08×阻尼ATR, 现价0.25%))；今/昨/周高低只要距现价至少 0.12% 就保留（含刚跌破）。昨/近5日/周/今/4小时/小时跌破或升破后换到现价另一侧。超过约30日的旧摆动，若该侧还有今/昨/周或≤15日结构，不能占最近两档，只放到更远一档。每侧2档，10% 以内且与已选档间距约等于簇宽时可再加第3档。和关键位重复的档位保留，并用具体名称（如昨低已破、今低、7–8月密集）。经典枢轴只在附近没有结构位时补位，且不得出现在现价错误一侧；不把现价上下两侧并成一簇。仅供参考，非预测。快讯：优先律动 BlockBeats 与 Tree News，辅以其它来源；只保留约 6 小时内重要条目；英文标题自动译成中文。BTC 另显「周期估值·ETF优化」：ahr999/Mayer/2年均线倍数/Pi距金叉/Power Law偏离/Puell近似；合流热度为近2年分位均值。固定旧阈值已钝化，仅供参考。超买超卖用日线 RSI(14)：≥70 超买、≤30 超卖；同框补充 24h高低与区间位置（币安 ticker）、距MA200%（已收盘日线）、USDT-M 资金费率（币安期货 premiumIndex）、日线 ATR(14)%、恐惧贪婪（alternative.me）、BTC/ETH 主导率（CoinGecko）。行情来自币安公开接口（BTC/ETH/SOL/BNB/HYPE/ZEC）。只提醒，不下单。非投资建议。</p>
   </div>
 
   <div class="tip-backdrop" id="tipModal" aria-hidden="true">
@@ -791,7 +819,9 @@ const ASSETS = [
 const state = {};
 ASSETS.forEach(a => {
   state[a.id] = {
-    meta:a, spot:null, lastSpot:null, ticker:null, daily:null, h4:null, h1:null, srLevels:[], t2Summary:null, rsi:null, atrPct:null, funding:null, err:null
+    meta:a, spot:null, lastSpot:null, ticker:null, daily:null, h4:null, h1:null,
+    formingDaily:null, formingH4:null, keyLevels:[], srLevels:[], srMeta:null,
+    t2Summary:null, rsi:null, atrPct:null, funding:null, err:null
   };
 });
 let selected = 'BTC';
@@ -803,8 +833,14 @@ let wsIdx = 0;
 let failTimer = null;
 const marketMood = { fng:null, fngLabel:null, btcD:null, ethD:null };
 let synthBuiltOnce = false;
-let synthLastAt = 0;
+let synthSlowAt = 0;
+let synthFastAt = 0;
+let synthSlowBullets = [];
+let synthFastBullets = [];
+let synthFastSig = '';
 const SYNTH_MS = 2 * 60 * 60 * 1000;
+const SYNTH_PRICE_MS = 20 * 60 * 1000;
+const MA_FAR_PCT = 7;
 
 const $ = (id) => document.getElementById(id);
 
@@ -1194,6 +1230,7 @@ function applyTicker(id, t){
   const pctChange = Number(t.P ?? t.priceChangePercent);
   st.ticker = t;
   st.spot = price;
+  if (Number.isFinite(price)) ratchetForming(id, price);
   const pxEl = $('px-'+id);
   const chgEl = $('chg-'+id);
   if (pxEl) {
@@ -1213,8 +1250,8 @@ function applyTicker(id, t){
     }
     return;
   }
-  if (id === selected && st.srLevels.length) renderSR();
   if (st.daily) computeSR(id);
+  else if (id === selected && st.srLevels.length) renderSR();
   paintExtraStats();
 }
 
@@ -1231,8 +1268,15 @@ function updateBadges(id){
   }
   b1.className = 'mini ' + (last.inPos ? 'ok' : 'warn');
   b1.textContent = last.inPos ? ('持有 '+last.votes+'/3') : ('空仓 '+last.votes+'/3');
-  b2.className = 'mini ' + (last.aboveMa ? 'ok' : 'warn');
-  b2.textContent = last.aboveMa ? '牛市 是' : '牛市 否';
+  if (maSampleShort(id)) {
+    b2.className = 'mini neu';
+    b2.textContent = '样本不足';
+    b2.title = '样本不足，牛市票暂不可比';
+  } else {
+    b2.className = 'mini ' + (last.aboveMa ? 'ok' : 'warn');
+    b2.textContent = last.aboveMa ? '牛市 是' : '牛市 否';
+    b2.title = '';
+  }
 }
 
 function sma(arr, n){
@@ -1357,7 +1401,7 @@ const METRIC_HELP = {
       <div class="tip-item"><div class="tn">24h区间</div><div class="td">现价在币安 24h 最低→最高之间的位置：0% 贴近日低，100% 贴近日高。看短线伸展，不单作方向。</div></div>
       <div class="tip-item"><div class="tn">距 MA200 %</div><div class="td">现价相对 200 日均线偏离。正值在均线上方（偏牛），负值在下方；过大常意味伸展、易回抽。</div></div>
       <div class="tip-item"><div class="tn">资金费率</div><div class="td">U 本位永续多空换仓费。正=多头付空头（做多拥挤），负=空头付多头；看拥挤度，不单看方向。</div></div>
-      <div class="tip-item"><div class="tn">ATR%</div><div class="td">14 日真实波幅÷收盘价。越大波动越大、止损/位距宜留宽；越小波动越收窄。</div></div>
+      <div class="tip-item"><div class="tn">ATR%</div><div class="td">14 日真实波幅÷收盘价，页面上是未阻尼的 ATR14。越大波动越大；支撑阻力聚类另用阻尼 ATR，避免单日大波动把价位并得过宽。</div></div>
       <div class="tip-item"><div class="tn">恐惧贪婪 / 主导率</div><div class="td">恐惧贪婪看大盘情绪；BTC/ETH 主导率看资金偏比特币还是山寨。</div></div>
     </div>`
   },
@@ -1379,7 +1423,7 @@ const METRIC_HELP = {
   },
   atr: {
     title: 'ATR%',
-    html: `<p><b>ATR(14)</b> 为 14 日真实波幅，再除以收盘价得到百分比。</p><p>数字大 = 波动大，止损和支撑/阻力间距宜留宽；数字小 = 波动收窄，常见于横盘或变盘前。</p><p>本页支撑阻力聚类也会用到 ATR。</p>`
+    html: `<p><b>ATR(14)</b> 为 14 日真实波幅，再除以收盘价得到百分比。页面上这个百分比不做阻尼。</p><p>数字大 = 波动大，止损和支撑/阻力间距宜留宽；数字小 = 波动收窄，常见于横盘或变盘前。</p><p>支撑阻力的聚类和贴价过滤用阻尼 ATR（不超过真实 ATR14，也不超过近 14 根真实波幅中位数的 1.15 倍），避免大跌日把簇宽撑得过宽。</p>`
   },
   fng: {
     title: '恐惧贪婪指数',
@@ -1668,32 +1712,41 @@ function synthReadyEnough(){
   return dailyOk && rsiOk;
 }
 
-function collectSynthBullets(){
+function collectSlowBullets(){
   const bullets = [];
-
-  // 1) 三选二 + 牛市
-  const hold = [], flat = [];
+  const hold = [];
+  const comparable = [];
+  const shortIds = [];
   for (const a of ASSETS){
-    const t2 = state[a.id] && state[a.id].t2Summary;
+    const st = state[a.id];
+    const t2 = st && st.t2Summary;
     if (!t2) continue;
-    const tag = a.id + ' ' + t2.votes + '/3';
-    if (t2.inPos) hold.push(tag); else flat.push(tag);
+    if (maSampleShort(a.id)) shortIds.push(a.id);
+    else comparable.push({id: a.id, t2});
+  }
+  for (const x of comparable){
+    if (x.t2.inPos) hold.push(x.id + ' ' + x.t2.votes + '/3');
   }
   const btcT2 = state.BTC && state.BTC.t2Summary;
   if (btcT2){
     const pos = btcT2.inPos
       ? ('<span class="up">持有</span> ' + btcT2.votes + '/3')
       : ('<span class="down">空仓</span> ' + btcT2.votes + '/3');
-    const bull = btcT2.aboveMa
-      ? '<span class="up">牛市中</span>'
-      : '<span class="down">非牛市</span>';
-    let line = 'BTC 三选二：' + pos + '，' + bull + '。六币持有 <b>' + hold.length + '/6</b>';
+    const bull = maSampleShort('BTC')
+      ? '<span class="warm">均线样本不足</span>'
+      : (btcT2.aboveMa ? '<span class="up">牛市中</span>' : '<span class="down">非牛市</span>');
+    let line = 'BTC 三选二：' + pos + '，' + bull + '。';
+    if (!shortIds.length && comparable.length === ASSETS.length){
+      line += '六币持有 <b>' + hold.length + '/6</b>';
+    } else {
+      line += '可比持有 <b>' + hold.length + '/' + comparable.length + '</b>';
+    }
     if (hold.length && hold.length <= 4) line += '（' + hold.join('、') + '）';
-    else if (hold.length > 4) line += '（' + hold.slice(0,4).join('、') + '…）';
-    bullets.push(line + '。');
+    else if (hold.length > 4) line += '（' + hold.slice(0, 4).join('、') + '…）';
+    if (shortIds.length) line += '。' + shortIds.join('、') + ' 样本不足，牛市票暂不可比';
+    bullets.push({slot:'t2', html: line + '。'});
   }
 
-  // 2) RSI 超买超卖
   const ob = [], os = [];
   let rsiN = 0;
   for (const a of ASSETS){
@@ -1704,17 +1757,78 @@ function collectSynthBullets(){
     else if (r <= 30) os.push(a.id + ' ' + r.toFixed(0));
   }
   if (rsiN){
+    let html;
     if (ob.length || os.length){
       const parts = [];
       if (ob.length) parts.push('<span class="down">超买</span> ' + ob.join('、'));
       if (os.length) parts.push('<span class="up">超卖</span> ' + os.join('、'));
-      bullets.push('RSI：' + parts.join('；') + '。');
+      html = 'RSI：' + parts.join('；') + '。';
+    } else if (rsiN === ASSETS.length) {
+      html = 'RSI：六币均在 30–70 中性区。';
     } else {
-      bullets.push('RSI：六币均在 30–70 中性区。');
+      html = 'RSI：已加载币种都在 30–70 中性区。';
     }
+    bullets.push({slot:'rsi', html});
   }
 
-  // 2b) 24h区间：BTC位置 + 贴近高低端的币
+  const extras = [];
+  if (marketMood.fng != null){
+    extras.push('恐惧贪婪 <b>' + Math.round(marketMood.fng) + '</b>' +
+      (marketMood.fngLabel ? '（' + marketMood.fngLabel + '）' : ''));
+  }
+  if (marketMood.btcD != null) extras.push('BTC.D <b>' + marketMood.btcD.toFixed(1) + '%</b>');
+  if (marketMood.ethD != null) extras.push('ETH.D <b>' + marketMood.ethD.toFixed(1) + '%</b>');
+
+  const fundNotes = [];
+  for (const a of ASSETS){
+    const f = state[a.id] && state[a.id].funding;
+    if (f == null || !Number.isFinite(f)) continue;
+    const pct = f * 100;
+    if (Math.abs(pct) >= 0.03){
+      const cls = pct >= 0 ? 'warm' : 'up';
+      fundNotes.push(a.id + ' <span class="' + cls + '">' + (pct>=0?'+':'') + pct.toFixed(3) + '%</span>');
+    }
+  }
+  let maxAtr = null;
+  for (const a of ASSETS){
+    const atr = state[a.id] && state[a.id].atrPct;
+    if (atr == null || !Number.isFinite(atr)) continue;
+    if (!maxAtr || atr > maxAtr.v) maxAtr = {id: a.id, v: atr};
+  }
+  let extraLine = extras.join(' · ');
+  if (fundNotes.length) extraLine += (extraLine ? '；' : '') + '费率偏高 ' + fundNotes.slice(0, 3).join('、');
+  if (maxAtr && maxAtr.v >= 4.5){
+    extraLine += (extraLine ? '；' : '') + '波动最大 ' + maxAtr.id + ' ATR <b>' + maxAtr.v.toFixed(1) + '%</b>';
+  }
+  if (extraLine) bullets.push({slot:'mood', html: extraLine + '。'});
+
+  const cycle = state.BTC && state.BTC.cycle;
+  if (cycle && cycle.ahr && cycle.ahr.value != null){
+    const hl = heatLabel(cycle.heat);
+    const az = ahrZone(cycle.ahr.value);
+    const heatTxt = cycle.heat != null ? ('<b>' + cycle.heat.toFixed(0) + '</b>（' + shortZoneLabel(hl.label) + '）') : '—';
+    bullets.push({
+      slot:'cycle',
+      html: 'BTC 周期：合流热度 ' + heatTxt + '，ahr999 <b>' + cycle.ahr.value.toFixed(3) + '</b>（' + shortZoneLabel(az.label) + '）。'
+    });
+  }
+  return bullets;
+}
+
+function maPctOf(id){
+  const spot = assetSpot(id);
+  const st = state[id];
+  const ma200 = st && st.t2Summary && st.t2Summary.ma200;
+  if (!(spot > 0) || !(ma200 > 0)) return null;
+  return ((spot / ma200) - 1) * 100;
+}
+function maSpan(pct){
+  const cls = pct >= 0 ? 'up' : 'down';
+  return '<span class="' + cls + '">' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</span>';
+}
+
+function collectFastBullets(){
+  const bullets = [];
   const nearHi = [], nearLo = [];
   let btcPos = null;
   for (const a of ASSETS){
@@ -1733,123 +1847,102 @@ function collectSynthBullets(){
     if (btcPos != null) bits.push('BTC 处 24h 区间 <b>' + btcPos.toFixed(0) + '%</b>（0%日低·100%日高）');
     if (nearHi.length) bits.push('<span class="warm">近高</span> ' + nearHi.join('、'));
     if (nearLo.length) bits.push('<span class="up">近低</span> ' + nearLo.join('、'));
-    bullets.push('24h区间：' + bits.join('；') + '。');
+    bullets.push({slot:'range24', html: '24h区间：' + bits.join('；') + '。'});
   }
 
-  // 3) F&G / 主导率 / 极端偏离
-  const extras = [];
-  if (marketMood.fng != null){
-    extras.push('恐惧贪婪 <b>' + Math.round(marketMood.fng) + '</b>' +
-      (marketMood.fngLabel ? '（' + marketMood.fngLabel + '）' : ''));
-  }
-  if (marketMood.btcD != null) extras.push('BTC.D <b>' + marketMood.btcD.toFixed(1) + '%</b>');
-  if (marketMood.ethD != null) extras.push('ETH.D <b>' + marketMood.ethD.toFixed(1) + '%</b>');
-
-  const maNotes = [];
+  const btcShort = maSampleShort('BTC');
+  const btcPct = btcShort ? null : maPctOf('BTC');
+  const others = [];
   for (const a of ASSETS){
-    const st = state[a.id];
-    const spot = assetSpot(a.id);
-    const ma200 = st && st.t2Summary && st.t2Summary.ma200;
-    if (!(spot > 0) || !(ma200 > 0)) continue;
-    const pct = ((spot / ma200) - 1) * 100;
-    if (Math.abs(pct) >= 12){
-      const cls = pct >= 0 ? 'up' : 'down';
-      maNotes.push(a.id + ' <span class="' + cls + '">' + (pct>=0?'+':'') + pct.toFixed(1) + '%</span>');
+    if (a.id === 'BTC' || maSampleShort(a.id)) continue;
+    const pct = maPctOf(a.id);
+    if (pct == null || Math.abs(pct) < MA_FAR_PCT) continue;
+    others.push(a.id + ' ' + maSpan(pct));
+  }
+  if (btcShort || btcPct != null || others.length){
+    let line;
+    if (btcShort) line = '距MA200：BTC 样本不足，牛市票暂不可比';
+    else if (btcPct != null && Math.abs(btcPct) >= MA_FAR_PCT) line = '距MA200偏大：BTC ' + maSpan(btcPct);
+    else if (btcPct != null) line = '距MA200：BTC ' + maSpan(btcPct);
+    else line = '距MA200偏大';
+    if (others.length){
+      if (btcShort || btcPct != null) line += '；' + others.slice(0, 3).join('、');
+      else line += '：' + others.slice(0, 3).join('、');
     }
-  }
-  maNotes.sort((x,y) => {
-    const ax = Math.abs(parseFloat(String(x).replace(/<[^>]+>/g,'').split(' ').pop()));
-    const ay = Math.abs(parseFloat(String(y).replace(/<[^>]+>/g,'').split(' ').pop()));
-    return ay - ax;
-  });
-
-  const fundNotes = [];
-  for (const a of ASSETS){
-    const f = state[a.id] && state[a.id].funding;
-    if (f == null || !Number.isFinite(f)) continue;
-    const pct = f * 100;
-    if (Math.abs(pct) >= 0.03){
-      const cls = pct >= 0 ? 'warm' : 'up';
-      fundNotes.push(a.id + ' <span class="' + cls + '">' + (pct>=0?'+':'') + pct.toFixed(3) + '%</span>');
-    }
+    bullets.push({slot:'ma', html: line + '。'});
   }
 
-  let maxAtr = null;
-  for (const a of ASSETS){
-    const atr = state[a.id] && state[a.id].atrPct;
-    if (atr == null || !Number.isFinite(atr)) continue;
-    if (!maxAtr || atr > maxAtr.v) maxAtr = { id:a.id, v:atr };
-  }
-
-  let extraLine = extras.join(' · ');
-  if (maNotes.length){
-    extraLine += (extraLine ? '；' : '') + '距MA200偏大 ' + maNotes.slice(0,3).join('、');
-  }
-  if (fundNotes.length){
-    extraLine += (extraLine ? '；' : '') + '费率偏高 ' + fundNotes.slice(0,3).join('、');
-  }
-  if (maxAtr && maxAtr.v >= 4.5){
-    extraLine += (extraLine ? '；' : '') + '波动最大 ' + maxAtr.id + ' ATR <b>' + maxAtr.v.toFixed(1) + '%</b>';
-  }
-  if (extraLine) bullets.push(extraLine + '。');
-
-  // 4) Cycle / ahr999
-  const cycle = state.BTC && state.BTC.cycle;
-  if (cycle && cycle.ahr && cycle.ahr.value != null){
-    const hl = heatLabel(cycle.heat);
-    const az = ahrZone(cycle.ahr.value);
-    const heatTxt = cycle.heat != null ? ('<b>' + cycle.heat.toFixed(0) + '</b>（' + shortZoneLabel(hl.label) + '）') : '—';
-    bullets.push('BTC 周期：合流热度 ' + heatTxt + '，ahr999 <b>' + cycle.ahr.value.toFixed(3) + '</b>（' + shortZoneLabel(az.label) + '）。');
-  }
-
-  // 5) BTC 最近支撑/阻力（可选）
   const stB = state.BTC;
   const ref = assetSpot('BTC');
   if (stB && stB.srLevels && stB.srLevels.length && ref != null){
     const nearR = stB.srLevels.find(l => l.nearAbove) || stB.srLevels.find(l => l.kind === 'r');
     const nearS = stB.srLevels.find(l => l.nearBelow) || stB.srLevels.find(l => l.kind === 's');
     const bits = [];
-    if (nearR){
-      const pct = ((nearR.price - ref) / ref) * 100;
-      bits.push('阻力 $' + fmtPx('BTC', nearR.price) + '（+' + pct.toFixed(2) + '%）');
-    }
-    if (nearS){
-      const pct = ((nearS.price - ref) / ref) * 100;
-      bits.push('支撑 $' + fmtPx('BTC', nearS.price) + '（' + pct.toFixed(2) + '%）');
-    }
-    if (bits.length) bullets.push('BTC 最近档：' + bits.join(' · ') + '。');
+    const one = (lv, side) => {
+      const pct = ((lv.price - ref) / ref) * 100;
+      const nm = lv.name ? (lv.name + ' ') : '';
+      return nm + side + ' $' + fmtPx('BTC', lv.price) + '（' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%）';
+    };
+    if (nearR) bits.push(one(nearR, '阻力'));
+    if (nearS) bits.push(one(nearS, '支撑'));
+    if (bits.length) bullets.push({slot:'sr', html: 'BTC 最近档：' + bits.join(' · ') + '。'});
   }
-
-  return bullets.slice(0, 6);
+  return bullets;
 }
 
-function renderSynth(bullets, ready){
+const SYNTH_ORDER = ['t2', 'rsi', 'range24', 'mood', 'ma', 'cycle', 'sr'];
+
+function renderSynthCombined(){
   const list = $('synthList');
   const meta = $('synthMeta');
   if (!list || !meta) return;
-  if (!ready || !bullets || !bullets.length){
+  const by = {};
+  for (const b of (synthSlowBullets || [])) by[b.slot] = b.html;
+  for (const b of (synthFastBullets || [])) by[b.slot] = b.html;
+  const htmls = [];
+  for (const slot of SYNTH_ORDER) if (by[slot]) htmls.push(by[slot]);
+  if (!synthBuiltOnce || !htmls.length){
     list.innerHTML = '<li class="mute">加载中…</li>';
-    meta.textContent = '加载中… · 约每2小时';
+    meta.textContent = '加载中…';
+    meta.title = '';
     return;
   }
-  list.innerHTML = bullets.map(b => '<li>' + b + '</li>').join('');
-  synthLastAt = Date.now();
-  meta.textContent = '更新于 ' + hkTimeHM(synthLastAt) + ' · 约每2小时';
+  list.innerHTML = htmls.map(b => '<li>' + b + '</li>').join('');
+  const priceTxt = synthFastAt ? ('价位 ' + hkTimeHM(synthFastAt)) : '价位待更新';
+  const slowTxt = synthSlowAt ? ('其余 ' + hkTimeHM(synthSlowAt)) : '其余待更新';
+  meta.textContent = priceTxt + ' · ' + slowTxt;
+  meta.title = '价位句（24h区间、距MA200、最近档）约每20分钟，或这些档位变化时更新；三选二、RSI、恐惧贪婪、主导率与周期约每2小时';
 }
 
 function buildSynthAnalysis(force){
   if (!synthReadyEnough()){
-    if (!synthBuiltOnce) renderSynth(null, false);
+    if (!synthBuiltOnce) renderSynthCombined();
     return false;
   }
-  const bullets = collectSynthBullets();
-  if (!bullets.length){
-    if (!synthBuiltOnce) renderSynth(null, false);
+  synthSlowBullets = collectSlowBullets();
+  synthFastBullets = collectFastBullets();
+  synthSlowAt = Date.now();
+  synthFastAt = Date.now();
+  synthFastSig = synthFastBullets.map(b => b.slot + '\n' + b.html).join('\n---\n');
+  if (!synthSlowBullets.length && !synthFastBullets.length){
+    if (!synthBuiltOnce) renderSynthCombined();
     return false;
   }
-  renderSynth(bullets, true);
   synthBuiltOnce = true;
+  renderSynthCombined();
   return true;
+}
+
+function refreshFastSynth(force){
+  if (!synthBuiltOnce || !synthReadyEnough()) return;
+  const bullets = collectFastBullets();
+  const sig = bullets.map(b => b.slot + '\n' + b.html).join('\n---\n');
+  const due = !synthFastAt || (Date.now() - synthFastAt >= SYNTH_PRICE_MS);
+  if (!force && !due && sig === synthFastSig) return;
+  synthFastBullets = bullets;
+  synthFastSig = sig;
+  synthFastAt = Date.now();
+  renderSynthCombined();
 }
 
 function maybeBuildSynth(force){
@@ -1857,14 +1950,8 @@ function maybeBuildSynth(force){
     buildSynthAnalysis(true);
     return;
   }
-  if (!synthBuiltOnce){
-    buildSynthAnalysis(false);
-    return;
-  }
-  // already built: only rebuild on 2h timer, not on every extras poll
+  if (!synthBuiltOnce) buildSynthAnalysis(false);
 }
-
-
 
 function computeSanXuanEr(opens, highs, lows, closes, dates){
   const jj = closes.map((c,i) => (c + highs[i] + lows[i]) / 3);
@@ -1919,6 +2006,17 @@ function ymd(ms){
   const d = new Date(ms);
   const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
+}
+function ymdToMs(s){
+  const p = String(s||'').split('-').map(Number);
+  if (p.length < 3 || !p[0]) return null;
+  return Date.UTC(p[0], p[1]-1, p[2]);
+}
+function maSampleShort(id){
+  const st = state[id];
+  if (!st || !st.daily || !st.daily.closes) return false;
+  const ma = st.t2Summary && st.t2Summary.ma200;
+  return st.daily.closes.length < 200 || !(ma > 0);
 }
 
 async function fetchJson(url){
@@ -1996,109 +2094,193 @@ function atr14(highs, lows, closes){
   return Math.max(1e-9, sum / len);
 }
 
-/** 近 N 个 ISO 自然周的周高低（由已收盘日线按日历周聚合），结构位补充 */
-function weeklyHLFromDaily(highs, lows, dates, weeks){
-  const buckets = new Map();
-  for (let i = 0; i < highs.length; i++){
-    const d = String(dates[i] || '');
-    // dates 为 YYYY-MM-DD（UTC）
-    const parts = d.split('-').map(Number);
-    if (parts.length < 3 || !parts[0]) continue;
-    const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-    // ISO week key: year-week
-    const tmp = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()));
-    const dayNum = tmp.getUTCDay() || 7;
-    tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
-    const key = tmp.getUTCFullYear() + '-W' + String(weekNo).padStart(2, '0');
-    if (!buckets.has(key)) buckets.set(key, []);
-    buckets.get(key).push(i);
-  }
-  const keys = Array.from(buckets.keys()).sort();
-  const use = keys.slice(-weeks);
+function dailyTrueRanges(highs, lows, closes){
   const out = [];
-  const lastIdx = highs.length - 1;
-  for (const key of use){
-    const idxs = buckets.get(key);
-    let wh = -Infinity, wl = Infinity, hi = -1, li = -1;
-    for (const j of idxs){
-      if (highs[j] > wh) { wh = highs[j]; hi = j; }
-      if (lows[j] < wl) { wl = lows[j]; li = j; }
-    }
-    out.push({kind:'r', src:'week', price: wh, age: lastIdx - hi});
-    out.push({kind:'s', src:'week', price: wl, age: lastIdx - li});
+  for (let i = 1; i < closes.length; i++){
+    out.push(Math.max(
+      highs[i] - lows[i],
+      Math.abs(highs[i] - closes[i-1]),
+      Math.abs(lows[i] - closes[i-1])
+    ));
   }
   return out;
 }
+function medianNum(nums){
+  if (!nums.length) return 0;
+  const s = nums.slice().sort((a,b)=> a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+/** 只给聚类和贴价过滤用。页面 ATR% 仍是 atr14，不经过这里。 */
+function dampedAtr14(highs, lows, closes){
+  const raw = atr14(highs, lows, closes);
+  const med = medianNum(dailyTrueRanges(highs, lows, closes).slice(-14));
+  if (!(med > 0)) return raw;
+  return Math.min(raw, 1.15 * med);
+}
 
-function clusterMeta(metas, ref, below, tol, maxKeep, atr){
-  const atrV = atr || 1;
-  const srcRank = {swing:4, week:3, local:3, h4:3, h4local:3, day:2, h1:2, pivot:1};
+function isoWeekKeyFromMs(ms){
+  if (!Number.isFinite(ms)) return null;
+  const day = new Date(Date.UTC(
+    new Date(ms).getUTCFullYear(),
+    new Date(ms).getUTCMonth(),
+    new Date(ms).getUTCDate()
+  ));
+  const dayNum = day.getUTCDay() || 7;
+  day.setUTCDate(day.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(day.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((day - yearStart) / 86400000) + 1) / 7);
+  return day.getUTCFullYear() + '-W' + String(weekNo).padStart(2, '0');
+}
+function isoWeekKeyFromYmd(s){
+  const ms = ymdToMs(s);
+  return ms == null ? null : isoWeekKeyFromMs(ms);
+}
+
+/** 近 8 个 ISO 周高低。当前周并入未收盘日线，并标未收盘；过去周只用已收盘日线。 */
+function weeklyStructureSeeds(highs, lows, dates, forming){
+  const buckets = new Map();
+  for (let i = 0; i < highs.length; i++){
+    const key = isoWeekKeyFromYmd(dates[i]);
+    if (!key) continue;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(i);
+  }
+  const curKey = (forming && forming.openMs)
+    ? isoWeekKeyFromMs(forming.openMs)
+    : isoWeekKeyFromMs(Date.now());
+  if (curKey && !buckets.has(curKey)) buckets.set(curKey, []);
+  const keys = Array.from(buckets.keys()).sort().slice(-8);
+  const lastIdx = highs.length - 1;
+  const seeds = [];
+  const pushHL = (price, pole, idx, current) => {
+    if (!(price > 0) || !Number.isFinite(price)) return;
+    seeds.push({
+      price, src: 'week', pole, tier: 0, keyExempt: true, touches: 1,
+      unclosed: current, currentWeek: current,
+      age: idx >= 0 ? (lastIdx - idx) : 0,
+      dateMs: idx >= 0 ? ymdToMs(dates[idx]) : (forming && forming.openMs)
+    });
+  };
+  for (const key of keys){
+    const idxs = buckets.get(key) || [];
+    let wh = -Infinity, wl = Infinity, hi = -1, li = -1;
+    for (const j of idxs){
+      if (highs[j] >= wh) { wh = highs[j]; hi = j; }
+      if (lows[j] <= wl) { wl = lows[j]; li = j; }
+    }
+    const current = key === curKey;
+    if (current && forming && Number.isFinite(forming.high) && forming.high >= wh) {
+      wh = forming.high; hi = -1;
+    }
+    if (current && forming && Number.isFinite(forming.low) && forming.low <= wl) {
+      wl = forming.low; li = -1;
+    }
+    pushHL(wh, 'H', hi, current);
+    pushHL(wl, 'L', li, current);
+  }
+  return seeds;
+}
+
+function clusterMeta(metas, ref, below, tol, maxKeep){
+  const specRank = {today: 6, yday: 5, h24: 4, week: 3, h4now: 2};
   const pickRep = (members) => {
-    // 代表价取簇内离现价更近的真实高低（非均值）；距离相同再取较新、更高优先级
+    // 重要性优先，而不是离现价更近。同级才比距离，再比触碰次数。
     let best = members[0];
     for (let i = 1; i < members.length; i++){
       const m = members[i];
-      const db = Math.abs(best.price - ref), dm = Math.abs(m.price - ref);
-      if (dm < db - 1e-12) best = m;
-      else if (Math.abs(dm - db) <= 1e-12){
-        const ab = (best.age == null) ? 999 : best.age, am = (m.age == null) ? 999 : m.age;
-        if (am < ab) best = m;
-        else if (am === ab && (srcRank[m.src]||0) > (srcRank[best.src]||0)) best = m;
+      const tb = best.tier == null ? 9 : best.tier;
+      const tm = m.tier == null ? 9 : m.tier;
+      if (tm !== tb) {
+        if (tm < tb) best = m;
+        continue;
       }
+      const db = Math.abs(best.price - ref), dm = Math.abs(m.price - ref);
+      if (dm < db - 1e-9) { best = m; continue; }
+      if (dm > db + 1e-9) continue;
+      const nb = best.touches || 1, nm = m.touches || 1;
+      if (nm !== nb) { if (nm > nb) best = m; continue; }
+      const sb = specRank[best.src] || 0, sm = specRank[m.src] || 0;
+      if (sm !== sb) { if (sm > sb) best = m; continue; }
+      const ab = best.age == null ? 999 : best.age;
+      const am = m.age == null ? 999 : m.age;
+      if (am < ab) best = m;
     }
     return best;
+  };
+  const applyBest = (g) => {
+    const best = pickRep(g.members);
+    g.rep = best.price;
+    g.age = best.age == null ? 999 : best.age;
+    g.src = best.src;
+    g.tier = best.tier == null ? 9 : best.tier;
+    g.pole = best.pole || null;
+    g.keyExempt = !!best.keyExempt;
+    g.unclosed = !!best.unclosed;
+    g.currentWeek = !!best.currentWeek;
+    g.dateMs = best.dateMs || null;
+    g.repMember = best;
   };
   const cands = metas.filter(m => below ? m.price < ref : m.price > ref)
     .sort((a,b)=> below ? (b.price - a.price) : (a.price - b.price));
   const groups = [];
   for (const m of cands){
-    const g = groups.length ? groups[groups.length-1] : null;
-    // 用种子价判距，避免极值漂移造成单链接“链式粘连”
+    const g = groups.length ? groups[groups.length - 1] : null;
     if (g && Math.abs(g.seed - m.price) < tol){
       g.n += 1;
       g.touches += 1;
       g.prices.push(m.price);
       g.members.push(m);
-      const best = pickRep(g.members);
-      g.rep = best.price;
-      g.age = best.age == null ? 999 : best.age;
-      g.src = best.src;
+      applyBest(g);
     } else {
-      groups.push({
-        seed: m.price,
-        rep: m.price,
-        touches: 1,
-        n: 1,
-        src: m.src,
-        age: m.age == null ? 999 : m.age,
-        prices: [m.price],
-        members: [m]
-      });
+      const ng = {
+        seed: m.price, rep: m.price, touches: 1, n: 1,
+        src: m.src, age: m.age == null ? 999 : m.age,
+        prices: [m.price], members: [m]
+      };
+      applyBest(ng);
+      groups.push(ng);
     }
   }
-  // 按与现价真实距离保留最近簇（年龄只用于同距代表价），避免旧而更近的真实位被罚出
+  const tierNum = (g) => (g.tier == null ? 9 : g.tier);
   groups.sort((a,b)=>{
     const da = Math.abs(a.rep - ref), db = Math.abs(b.rep - ref);
     if (da !== db) return da - db;
-    if ((a.age||0) !== (b.age||0)) return (a.age||0) - (b.age||0);
-    return (b.n||0) - (a.n||0);
+    if (tierNum(a) !== tierNum(b)) return tierNum(a) - tierNum(b);
+    return (a.age || 0) - (b.age || 0);
   });
   const kept = [];
   for (const g of groups){
-    if (kept.some(k => Math.abs(k.rep - g.rep) < tol)) continue;
+    const idx = kept.findIndex(k => Math.abs(k.rep - g.rep) < tol);
+    if (idx >= 0){
+      const k = kept[idx];
+      const betterTier = tierNum(g) < tierNum(k);
+      const sameTierMore = tierNum(g) === tierNum(k) && (g.touches || 0) > (k.touches || 0);
+      if (betterTier || sameTierMore) kept[idx] = g;
+      continue;
+    }
     kept.push(g);
-    if (kept.length >= maxKeep) break;
   }
-  return kept;
+  kept.sort((a,b)=> Math.abs(a.rep - ref) - Math.abs(b.rep - ref));
+  return kept.slice(0, maxKeep);
 }
 
 function ageDaysFrom(openMs, lastMs){
   return (lastMs - openMs) / 86400000;
 }
 
-/** 已收盘 4h/1h 的确认摆动 + 近端高低（极性在 computeSR 里按现价分边） */
+function tierForSeed(src, age){
+  if (src === 'today' || src === 'yday' || src === 'week' || src === 'h24') return 0;
+  if (src === 'h4' || src === 'h4local' || src === 'h4now') {
+    if (age <= 15) return 1;
+    if (age <= 30) return 2;
+    return 3;
+  }
+  if (src === 'local' || src === 'h1') return 2;
+  return 3;
+}
+
+/** 已收盘 K。小时不取摆动，只留近端极值，避免正在走的 1 小时针抢走最近档。 */
 function intradaySeeds(bars, lookBars, srcSwing, srcLocal, localCount){
   if (!bars || !bars.highs || !bars.highs.length) return [];
   const n = bars.highs.length;
@@ -2110,37 +2292,120 @@ function intradaySeeds(bars, lookBars, srcSwing, srcLocal, localCount){
   if (!nn) return [];
   const lastMs = T[nn - 1];
   const seeds = [];
+  const push = (price, src, age, pole, dateMs) => {
+    if (!(price > 0) || !Number.isFinite(price)) return;
+    seeds.push({
+      price, src, age, pole, dateMs, touches: 1,
+      tier: tierForSeed(src, age),
+      keyExempt: false, unclosed: false, currentWeek: false
+    });
+  };
   if (srcSwing){
     for (const x of swingPivots(H, 3, 3, true))
-      seeds.push({price: x.price, src: srcSwing, age: ageDaysFrom(T[x.i], lastMs)});
+      push(x.price, srcSwing, ageDaysFrom(T[x.i], lastMs), 'H', T[x.i]);
     for (const x of swingPivots(L, 3, 3, false))
-      seeds.push({price: x.price, src: srcSwing, age: ageDaysFrom(T[x.i], lastMs)});
+      push(x.price, srcSwing, ageDaysFrom(T[x.i], lastMs), 'L', T[x.i]);
   }
-  seeds.push({price: H[nn - 1], src: srcLocal, age: 0});
-  seeds.push({price: L[nn - 1], src: srcLocal, age: 0});
-  if (localCount && nn >= localCount){
-    let hi = nn - localCount, li = nn - localCount;
-    for (let i = nn - localCount + 1; i < nn; i++){
+  push(H[nn - 1], srcLocal, 0, 'H', T[nn - 1]);
+  push(L[nn - 1], srcLocal, 0, 'L', T[nn - 1]);
+  const win = Math.min(localCount || 0, nn);
+  if (win >= 2){
+    let hi = nn - win, li = nn - win;
+    for (let i = nn - win + 1; i < nn; i++){
       if (H[i] >= H[hi]) hi = i;
       if (L[i] <= L[li]) li = i;
     }
-    seeds.push({price: H[hi], src: srcLocal, age: ageDaysFrom(T[hi], lastMs)});
-    seeds.push({price: L[li], src: srcLocal, age: ageDaysFrom(T[li], lastMs)});
+    push(H[hi], srcLocal, ageDaysFrom(T[hi], lastMs), 'H', T[hi]);
+    push(L[li], srcLocal, ageDaysFrom(T[li], lastMs), 'L', T[li]);
   }
   return seeds;
 }
 
+function fmtMd(ms){
+  if (!ms || !Number.isFinite(ms)) return '';
+  const d = new Date(ms);
+  return (d.getUTCMonth() + 1) + '/' + d.getUTCDate();
+}
+function utcMonthNum(ms){
+  if (!ms || !Number.isFinite(ms)) return null;
+  return new Date(ms).getUTCMonth() + 1;
+}
+function denseMonthName(members){
+  const dated = (members || []).filter(m => m && m.dateMs && (m.src === 'swing' || m.src === 'h4' || m.src === 'h4local'));
+  if (dated.length < 2) return null;
+  let maxAge = 0;
+  for (const m of dated) if ((m.age || 0) > maxAge) maxAge = m.age;
+  if (maxAge < 30) return null;
+  const times = dated.map(m => m.dateMs).filter(Boolean).sort((a,b)=> a - b);
+  if (times.length < 2) return null;
+  const m0 = utcMonthNum(times[0]);
+  const m1 = utcMonthNum(times[times.length - 1]);
+  if (m0 && m1 && m0 !== m1) return m0 + '–' + m1 + '月密集';
+  if (m0 && dated.length >= 3) return m0 + '月密集';
+  return null;
+}
+function specificLevelName(g, ref){
+  const rep = g.repMember || {
+    src: g.src, pole: g.pole, age: g.age, unclosed: g.unclosed,
+    dateMs: g.dateMs, tier: g.tier, currentWeek: g.currentWeek
+  };
+  if (rep.src === 'pivot') return g.name || '枢轴';
+  const price = g.rep;
+  const broken = (rep.pole === 'H' && price < ref) || (rep.pole === 'L' && price > ref);
+  const tier = rep.tier == null ? 9 : rep.tier;
+  const oldSwing = tier >= 2 && (rep.age || 0) > 30
+    && rep.src !== 'today' && rep.src !== 'yday' && rep.src !== 'week' && rep.src !== 'h24';
+  if (oldSwing){
+    const dense = denseMonthName(g.members);
+    if (dense) return dense;
+  }
+  const br = broken ? '已破' : '';
+  const p = rep.pole === 'H' ? '高' : '低';
+  let base;
+  const md = fmtMd(rep.dateMs);
+  const mo = utcMonthNum(rep.dateMs);
+  switch (rep.src){
+    case 'today': base = '今' + p + br; break;
+    case 'yday': base = '昨' + p + br; break;
+    case 'week': base = rep.currentWeek ? ('周' + p + br) : ((mo || '') + '月周' + p + br); break;
+    case 'h24': base = '24h' + p + br; break;
+    case 'local': base = '近5日' + p + br; break;
+    case 'h4now': base = '4小时' + p + br; break;
+    case 'h4':
+    case 'h4local': base = (md ? md + ' ' : '') + '4小时' + p + br; break;
+    case 'h1': base = (md ? md + ' ' : '') + '小时' + p + br; break;
+    case 'swing': base = (mo ? mo + '月' : '') + '摆动' + p + br; break;
+    default: base = '结构' + p + br;
+  }
+  if (rep.unclosed) base += ' · 未收盘';
+  return base;
+}
+
+function isProtectedLevel(lv){
+  if (!lv || lv.src === 'pivot') return false;
+  if (lv.tier === 0 || lv.keyExempt) return true;
+  return (lv.age || 0) <= 15;
+}
+function isTooOldLevel(lv){
+  if (!lv || lv.src === 'pivot') return false;
+  if (lv.tier === 0 || lv.keyExempt) return false;
+  return (lv.age || 0) > 30;
+}
+
+function ratchetForming(id, price){
+  const st = state[id];
+  if (!st || !(price > 0)) return;
+  for (const key of ['formingDaily', 'formingH4']){
+    const f = st[key];
+    if (!f || !(f.high > 0) || !(f.low > 0)) continue;
+    if (price > f.high) f.high = price;
+    if (price < f.low) f.low = price;
+  }
+}
+
 /**
- * 支撑/阻力（结构优先 v2.3）：
- * - 日线摆动确认 left=right=3；回看约 200 根已收盘日线；日线摆动不换边（高点阻力、低点支撑）
- * - 已收盘 4 小时摆动（左右各 3 根，约 120 日）+ 近端 4 小时高低 + 近 6 小时高低，按现价分边（跌破的低点当阻力，升破的高点当支撑）
- * - 聚类宽度 0.5×ATR(14)；代表价取簇内离现价更近的真实高低（非均值、非远端旧极值）
- * - ISO 自然周近 8 周高低 + 昨高低 + 近5日高低（年龄按极值所在已收盘日计算）
- * - 近端极性：昨高低 / 近5日高低 / ISO 周高低 / 4小时与小时近端按相对现价分边
- * - 近端贴价过滤约 0.12×ATR（且不少于现价 0.35%）；日线摆动与经典枢轴仍为 0.35×ATR
- * - 经典枢轴仅在附近无结构位时补位，且支撑枢轴不得出现在现价上方、阻力枢轴不得出现在现价下方
- * - 只展示现价上下最近各 1–2 档（按与现价真实距离；第二档须在 10% 内且间距≥0.45×ATR）
- * 仅供参考，非预测。
+ * 支撑/阻力（结构优先 v3）。
+ * 三选二、SMA200、日线 RSI、牛市判断仍只用已收盘 UTC 日线，不读未收盘种子。
  */
 function computeSR(id){
   const st = state[id];
@@ -2152,186 +2417,251 @@ function computeSR(id){
   const H = highs.slice(sliceStart);
   const L = lows.slice(sliceStart);
   const C = closes.slice(sliceStart);
-  const D = (dates && dates.length) ? dates.slice(sliceStart) : H.map((_,i)=>String(i));
+  const D = (dates && dates.length) ? dates.slice(sliceStart) : H.map((_,i)=> String(i));
   const nn = C.length;
-  const ref = (st.spot!=null && Number.isFinite(st.spot)) ? st.spot : C[nn-1];
+  if (nn < 2) return;
+  const ref = (st.spot != null && Number.isFinite(st.spot)) ? st.spot : C[nn - 1];
   const atr = atr14(H, L, C);
-  const clusterTol = 0.5 * atr;
-  const mergeTol = 0.35 * atr;
-  const pivotGap = 0.75 * atr;
-  const minDistSwing = 0.35 * atr;
-  const minDistNear = Math.max(0.12 * atr, 0.0035 * ref);
-  const minDist = minDistSwing;
-  const sep = 0.45 * atr;
-  const nearSrc = {week:1, local:1, day:1, h4:1, h4local:1, h1:1};
-  function minDistFor(src){ return nearSrc[src] ? minDistNear : minDistSwing; }
+  const damped = dampedAtr14(H, L, C);
+  const clusterTol = Math.max(1e-9, Math.min(0.28 * damped, 0.0045 * ref));
+  const mergeTol = clusterTol;
+  const pivotGap = 0.75 * damped;
+  const noiseMin = Math.max(0.0012 * ref, Math.min(0.08 * damped, 0.0025 * ref));
+  const keyMin = 0.0012 * ref;
+  const sep = clusterTol;
+  function passDist(item){
+    const dist = Math.abs(item.price - ref);
+    if (!(dist > 0)) return false;
+    if (item.keyExempt) return dist + 1e-9 >= keyMin;
+    return dist + 1e-9 >= noiseMin;
+  }
 
   const ph = swingPivots(H, 3, 3, true);
   const pl = swingPivots(L, 3, 3, false);
-  // 摆动点保持自然分边（高点只做阻力、低点只做支撑），避免远年摆动换边把近端结构吸走
-  let metaH = ph.map(x => ({price: x.price, src: 'swing', age: nn - 1 - x.i}));
-  let metaL = pl.map(x => ({price: x.price, src: 'swing', age: nn - 1 - x.i}));
+  let metaH = ph.map(x => ({
+    price: x.price, src: 'swing', age: nn - 1 - x.i, pole: 'H', tier: 3,
+    dateMs: ymdToMs(D[x.i]), keyExempt: false, unclosed: false, touches: 1
+  }));
+  let metaL = pl.map(x => ({
+    price: x.price, src: 'swing', age: nn - 1 - x.i, pole: 'L', tier: 3,
+    dateMs: ymdToMs(D[x.i]), keyExempt: false, unclosed: false, touches: 1
+  }));
+
   const nearTerm = [];
-  for (const w of weeklyHLFromDaily(H, L, D, 8)){
-    nearTerm.push({price: w.price, src: 'week', age: w.age == null ? 999 : w.age});
+  const weekSeeds = weeklyStructureSeeds(H, L, D, st.formingDaily);
+  for (const w of weekSeeds) nearTerm.push(w);
+
+  const yHigh = H[nn - 1], yLow = L[nn - 1];
+  const yMs = ymdToMs(D[nn - 1]);
+  nearTerm.push({price: yHigh, src:'yday', pole:'H', tier:0, age:1, dateMs:yMs, keyExempt:true, unclosed:false, touches:1});
+  nearTerm.push({price: yLow, src:'yday', pole:'L', tier:0, age:1, dateMs:yMs, keyExempt:true, unclosed:false, touches:1});
+
+  const fd = st.formingDaily;
+  if (fd && fd.high > 0 && fd.low > 0){
+    nearTerm.push({price: fd.high, src:'today', pole:'H', tier:0, age:0, dateMs:fd.openMs, keyExempt:true, unclosed:true, touches:1});
+    nearTerm.push({price: fd.low, src:'today', pole:'L', tier:0, age:0, dateMs:fd.openMs, keyExempt:true, unclosed:true, touches:1});
   }
-  // 昨高低：摆动未确认前也能给近端结构；跌破/升破后按极性落到现价另一侧
-  nearTerm.push({price: H[nn-1], src: 'day', age: 0});
-  nearTerm.push({price: L[nn-1], src: 'day', age: 0});
   if (nn >= 5){
     let hi = nn - 5, li = nn - 5;
     for (let i = nn - 4; i < nn; i++){
       if (H[i] >= H[hi]) hi = i;
       if (L[i] <= L[li]) li = i;
     }
-    nearTerm.push({price: H[hi], src: 'local', age: nn - 1 - hi});
-    nearTerm.push({price: L[li], src: 'local', age: nn - 1 - li});
+    nearTerm.push({
+      price: H[hi], src:'local', pole:'H', tier: tierForSeed('local', nn - 1 - hi),
+      age: nn - 1 - hi, dateMs: ymdToMs(D[hi]), keyExempt:false, unclosed:false, touches:1
+    });
+    nearTerm.push({
+      price: L[li], src:'local', pole:'L', tier: tierForSeed('local', nn - 1 - li),
+      age: nn - 1 - li, dateMs: ymdToMs(D[li]), keyExempt:false, unclosed:false, touches:1
+    });
   }
-  // 4小时确认摆动（约 120 日）+ 近端 4 小时高低；小时只取近 6 小时高低，避免噪音
-  if (st.h4) nearTerm.push.apply(nearTerm, intradaySeeds(st.h4, 720, 'h4', 'h4local', 6));
-  if (st.h1) nearTerm.push.apply(nearTerm, intradaySeeds(st.h1, 24, null, 'h1', 6));
+  if (st.h4) nearTerm.push.apply(nearTerm, intradaySeeds(st.h4, 720, 'h4', 'h4local', 90));
+  if (st.h1) nearTerm.push.apply(nearTerm, intradaySeeds(st.h1, 12, null, 'h1', 12));
+  const fh = st.formingH4;
+  if (fh && fh.high > 0 && fh.low > 0){
+    nearTerm.push({price: fh.high, src:'h4now', pole:'H', tier:1, age:0, dateMs:fh.openMs, keyExempt:false, unclosed:true, touches:1});
+    nearTerm.push({price: fh.low, src:'h4now', pole:'L', tier:1, age:0, dateMs:fh.openMs, keyExempt:false, unclosed:true, touches:1});
+  }
+  const t24 = tickerHL(st.ticker);
+  if (t24.hi) nearTerm.push({price: t24.hi, src:'h24', pole:'H', tier:0, age:0, dateMs:Date.now(), keyExempt:false, unclosed:false, touches:1});
+  if (t24.lo) nearTerm.push({price: t24.lo, src:'h24', pole:'L', tier:0, age:0, dateMs:Date.now(), keyExempt:false, unclosed:false, touches:1});
+
   for (const item of nearTerm){
+    if (!passDist(item)) continue;
     if (item.price > ref) metaH.push(item);
     else if (item.price < ref) metaL.push(item);
   }
-  // 聚类前先丢掉贴价噪音：近端阈值更窄，以免刚跌破的昨低/4小时低被滤掉
-  metaH = metaH.filter(m => (m.price - ref) >= minDistFor(m.src));
-  metaL = metaL.filter(m => (ref - m.price) >= minDistFor(m.src));
+  metaH = metaH.filter(passDist);
+  metaL = metaL.filter(passDist);
 
-  const resists = clusterMeta(metaH, ref, false, clusterTol, 8, atr);
-  const supports = clusterMeta(metaL, ref, true, clusterTol, 8, atr);
-
+  const resists = clusterMeta(metaH, ref, false, clusterTol, 12);
+  const supports = clusterMeta(metaL, ref, true, clusterTol, 12);
   const struct = [];
-  for (const g of supports){
-    if (ref - g.rep < minDistFor(g.src)) continue;
+  const pushStruct = (g, kind) => {
+    if (!passDist({price: g.rep, keyExempt: g.keyExempt})) return;
     struct.push({
-      kind: 's',
-      src: g.src,
-      name: g.src === 'week' ? '周线支撑' : (g.src === 'h4' || g.src === 'h4local' ? '4小时支撑' : (g.src === 'h1' ? '小时支撑' : (g.src === 'day' || g.src === 'local' ? '近端支撑' : '摆动支撑'))),
-      price: g.rep,
-      touches: g.touches,
-      age: g.age
+      kind, src: g.src, name: specificLevelName(g, ref), price: g.rep,
+      touches: g.touches, age: g.age, tier: g.tier,
+      keyExempt: !!g.keyExempt, unclosed: !!g.unclosed
     });
-  }
-  for (const g of resists){
-    if (g.rep - ref < minDistFor(g.src)) continue;
-    struct.push({
-      kind: 'r',
-      src: g.src,
-      name: g.src === 'week' ? '周线阻力' : (g.src === 'h4' || g.src === 'h4local' ? '4小时阻力' : (g.src === 'h1' ? '小时阻力' : (g.src === 'day' || g.src === 'local' ? '近端阻力' : '摆动阻力'))),
-      price: g.rep,
-      touches: g.touches,
-      age: g.age
-    });
-  }
+  };
+  for (const g of supports) pushStruct(g, 's');
+  for (const g of resists) pushStruct(g, 'r');
 
-  const lastH = H[nn-1], lastL = L[nn-1], lastC = C[nn-1];
+  const lastH = H[nn - 1], lastL = L[nn - 1], lastC = C[nn - 1];
   const P = (lastH + lastL + lastC) / 3;
   const pivotCands = [
-    {kind:'p', src:'pivot', name:'枢轴 P', price:P, age:0},
-    {kind:'r', src:'pivot', name:'枢轴 R1', price: 2*P - lastL, age:0},
-    {kind:'s', src:'pivot', name:'枢轴 S1', price: 2*P - lastH, age:0},
-    {kind:'r', src:'pivot', name:'枢轴 R2', price: P + (lastH - lastL), age:0},
-    {kind:'s', src:'pivot', name:'枢轴 S2', price: P - (lastH - lastL), age:0}
+    {kind:'p', src:'pivot', name:'枢轴 P', price:P, age:0, tier:9, touches:1},
+    {kind:'r', src:'pivot', name:'枢轴 R1', price: 2 * P - lastL, age:0, tier:9, touches:1},
+    {kind:'s', src:'pivot', name:'枢轴 S1', price: 2 * P - lastH, age:0, tier:9, touches:1},
+    {kind:'r', src:'pivot', name:'枢轴 R2', price: P + (lastH - lastL), age:0, tier:9, touches:1},
+    {kind:'s', src:'pivot', name:'枢轴 S2', price: P - (lastH - lastL), age:0, tier:9, touches:1}
   ];
-
-  // 结构优先：枢轴只在附近没有结构位时补位，减少贴价噪音；S/R 枢轴不得出现在现价错误一侧
   const levels = struct.slice();
   for (const pv of pivotCands){
-    if (Math.abs(pv.price - ref) < minDist) continue;
-    if (pv.kind === 's' && pv.price > ref) continue;
-    if (pv.kind === 'r' && pv.price < ref) continue;
+    if (Math.abs(pv.price - ref) < noiseMin) continue;
+    if (pv.kind === 's' && pv.price >= ref) continue;
+    if (pv.kind === 'r' && pv.price <= ref) continue;
     if (struct.some(s => Math.abs(s.price - pv.price) < pivotGap)) continue;
     levels.push(pv);
   }
 
   levels.sort((a,b)=> a.price - b.price);
-  const prio = {swing:4, week:3, local:3, h4:3, h4local:3, day:2, h1:2, pivot:1};
   const dedup = [];
   for (const lv of levels){
-    const prev = dedup[dedup.length-1];
-    if (prev && Math.abs(prev.price - lv.price) < mergeTol
-        && (prev.price > ref) === (lv.price > ref)){
-      // 只合并现价同一侧的近档，避免上下两侧真实位被互吞；同侧保留离现价更近的真实位，其次更高优先级 / 更新
+    const prev = dedup[dedup.length - 1];
+    const sameSide = prev && (prev.price > ref) === (lv.price > ref);
+    if (prev && sameSide && Math.abs(prev.price - lv.price) < mergeTol){
+      const ta = prev.tier == null ? 9 : prev.tier;
+      const tb = lv.tier == null ? 9 : lv.tier;
       let keepNew = false;
-      const prevDist = Math.abs(prev.price - ref);
-      const newDist = Math.abs(lv.price - ref);
-      if (newDist < prevDist - 1e-9) keepNew = true;
-      else if (Math.abs(newDist - prevDist) <= 1e-9){
-        if ((prio[lv.src]||0) > (prio[prev.src]||0)) keepNew = true;
-        else if ((prio[lv.src]||0) === (prio[prev.src]||0) && (lv.age||999) < (prev.age||999)) keepNew = true;
+      if (tb < ta) keepNew = true;
+      else if (tb === ta){
+        const prevDist = Math.abs(prev.price - ref);
+        const newDist = Math.abs(lv.price - ref);
+        if (newDist < prevDist - 1e-9) keepNew = true;
+        else if (Math.abs(newDist - prevDist) <= 1e-9 && (lv.touches || 0) > (prev.touches || 0)) keepNew = true;
       }
-      if (keepNew) dedup[dedup.length-1] = lv;
+      if (keepNew) dedup[dedup.length - 1] = lv;
       continue;
     }
     dedup.push(lv);
   }
 
-  // 展示档按与现价的真实距离选取，避免旧位惩罚把更近的真实高低挤出最近/下一档（年龄惩罚已用于聚类代表价）
-  function rawDist(lv){ return Math.abs(lv.price - ref); }
-  const above = dedup.filter(lv => lv.price > ref + minDistFor(lv.src)).sort((a,b)=> rawDist(a) - rawDist(b) || (a.age||0) - (b.age||0));
-  const below = dedup.filter(lv => lv.price < ref - minDistFor(lv.src)).sort((a,b)=> rawDist(a) - rawDist(b) || (a.age||0) - (b.age||0));
+  const above = dedup.filter(lv => lv.price > ref);
+  const below = dedup.filter(lv => lv.price < ref);
   const picked = [];
-  function displayName(lv, role){
-    if (lv.src === 'pivot') return lv.name;
-    if (lv.src === 'week') return role.includes('阻力') ? '周线阻力' : '周线支撑';
-    if (lv.src === 'h4' || lv.src === 'h4local') return role.includes('阻力') ? '4小时阻力' : '4小时支撑';
-    if (lv.src === 'h1') return role.includes('阻力') ? '小时阻力' : '小时支撑';
-    if (lv.src === 'day' || lv.src === 'local') return role.includes('阻力') ? '近端阻力' : '近端支撑';
-    return role;
-  }
   function takeSide(cands, isAbove){
+    const abs = lv => Math.abs(lv.price - ref);
+    const in10 = cands.filter(lv => abs(lv) / ref <= 0.10 + 1e-9);
+    const structural = in10.filter(lv => lv.src !== 'pivot');
+    const band = structural.length ? structural : in10;
+    const protect = band.some(isProtectedLevel);
+    const fresh = band.filter(lv => !isTooOldLevel(lv)).sort((a,b)=> abs(a) - abs(b) || (a.age || 0) - (b.age || 0));
+    const stale = band.filter(isTooOldLevel).sort((a,b)=> abs(a) - abs(b) || (a.age || 0) - (b.age || 0));
+    const primary = protect
+      ? fresh
+      : fresh.concat(stale).sort((a,b)=> abs(a) - abs(b) || (a.age || 0) - (b.age || 0));
     const out = [];
-    for (const lv of cands){
-      if (Math.abs(lv.price - ref) / ref > 0.10) continue;
-      if (out.some(o => Math.abs(o.price - lv.price) < sep)) continue;
+    const spaced = (lv) => !out.some(o => Math.abs(o.price - lv.price) < sep);
+    for (const lv of primary){
+      if (!spaced(lv)) continue;
       out.push(lv);
       if (out.length >= 2) break;
+    }
+    const farAnchor = out.length ? Math.max.apply(null, out.map(abs)) : Infinity;
+    const thirdPool = [];
+    for (const lv of fresh) if (out.indexOf(lv) < 0) thirdPool.push(lv);
+    for (const lv of stale) if (out.indexOf(lv) < 0) thirdPool.push(lv);
+    thirdPool.sort((a,b)=> abs(a) - abs(b));
+    for (const lv of thirdPool){
+      if (!spaced(lv)) continue;
+      if (protect && isTooOldLevel(lv) && abs(lv) <= farAnchor + 1e-6) continue;
+      out.push(lv);
+      break;
     }
     if (out[0]){
       if (isAbove) out[0].nearAbove = true;
       else out[0].nearBelow = true;
-      out[0].name = displayName(out[0], isAbove ? '最近阻力' : '最近支撑');
-      picked.push(out[0]);
     }
-    if (out[1]){
-      out[1].name = displayName(out[1], isAbove ? '下一阻力' : '下一支撑');
-      picked.push(out[1]);
-    }
+    for (const lv of out) picked.push(lv);
   }
   takeSide(above, true);
   takeSide(below, false);
   picked.sort((a,b)=> b.price - a.price);
+
+  const keys = [];
+  const pushKey = (name, price, unclosed, kind) => {
+    if (!(price > 0) || !Number.isFinite(price)) return;
+    keys.push({name, price, unclosed: !!unclosed, kind: kind || 'px'});
+  };
+  if (fd && fd.high > 0 && fd.low > 0){
+    pushKey('今高', fd.high, true);
+    pushKey('今低', fd.low, true);
+  }
+  pushKey('昨高', yHigh, false);
+  pushKey('昨低', yLow, false);
+  const weekHigh = weekSeeds.find(w => w.currentWeek && w.pole === 'H');
+  const weekLow = weekSeeds.find(w => w.currentWeek && w.pole === 'L');
+  if (weekHigh) pushKey('周高', weekHigh.price, true);
+  if (weekLow) pushKey('周低', weekLow.price, true);
+  pushKey('24h高', t24.hi, false);
+  pushKey('24h低', t24.lo, false);
+  const ma = st.t2Summary && st.t2Summary.ma200;
+  if (ma > 0 && ref > 0 && Math.abs(ma - ref) / ref <= 0.10 + 1e-9) pushKey('SMA200', ma, false, 'ma');
+
+  st.keyLevels = keys;
   st.srLevels = picked;
+  st.srMeta = {atr, damped, clusterTol, noiseMin, keyMin, sep, atrPctShown: st.atrPct};
   if (id === selected) renderSR();
   renderSRAll();
+  if (typeof refreshFastSynth === 'function') refreshFastSynth(false);
+}
+
+function renderKeyStrip(keys, id, ref){
+  if (!keys || !keys.length) return '';
+  const chips = keys.map(k => {
+    let cls = 'key-chip';
+    if (k.kind === 'ma') cls += ' ma';
+    else if (ref > 0 && k.price > ref) cls += ' above';
+    else if (ref > 0 && k.price < ref) cls += ' below';
+    const pct = ref > 0 ? ((k.price - ref) / ref) * 100 : null;
+    const pctStr = pct == null ? '' : ((pct >= 0 ? '+' : '') + pct.toFixed(1) + '%');
+    const open = k.unclosed ? '<em>未收盘</em>' : '';
+    return '<div class="' + cls + '"><div class="k"><span class="nm"><b>' + k.name + '</b>' + open + '</span>'
+      + (pctStr ? '<span class="d">' + pctStr + '</span>' : '')
+      + '</div><div class="v">$' + fmtPx(id, k.price) + '</div></div>';
+  }).join('');
+  return '<div class="key-strip" aria-label="关键位">' + chips + '</div>';
 }
 
 function renderSR(){
   const st = state[selected];
-  const ref = (st.spot!=null && Number.isFinite(st.spot)) ? st.spot : (st.daily ? st.daily.closes[st.daily.closes.length-1] : null);
-  if (!st.srLevels.length || ref==null) {
+  const ref = (st && st.spot != null && Number.isFinite(st.spot))
+    ? st.spot
+    : (st && st.daily ? st.daily.closes[st.daily.closes.length - 1] : null);
+  const keys = (st && st.keyLevels) || [];
+  const levels = (st && st.srLevels) || [];
+  if (!st || ref == null || (!levels.length && !keys.length)) {
     $('srBody').innerHTML = '<div class="quiet">暂无可用价位</div>';
     return;
   }
-  $('srBody').innerHTML = st.srLevels.map(lv => {
+  const strip = renderKeyStrip(keys, selected, ref);
+  const rows = levels.map(lv => {
     const pct = ((lv.price - ref) / ref) * 100;
-    const pctStr = (pct>=0?'+':'') + pct.toFixed(2) + '%';
-    const tagClass = lv.kind==='s' ? 'tag-s' : (lv.kind==='r' ? 'tag-r' : 'tag-p');
-    const tagText = lv.kind==='s' ? '支撑' : (lv.kind==='r' ? '阻力' : '枢轴');
+    const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    const tagClass = lv.kind === 's' ? 'tag-s' : (lv.kind === 'r' ? 'tag-r' : 'tag-p');
+    const tagText = lv.kind === 's' ? '支撑' : (lv.kind === 'r' ? '阻力' : '枢轴');
     const near = lv.nearAbove || lv.nearBelow;
     const nearHint = lv.nearAbove ? ' · 最近上方' : (lv.nearBelow ? ' · 最近下方' : '');
-    return `<div class="lvl-row${near?' near':''}">
-      <div class="lvl-left">
-        <span class="lvl-tag ${tagClass}">${tagText}</span>
-        <span class="lvl-name">${lv.name}${nearHint}</span>
-      </div>
-      <div class="lvl-right">
-        <div class="lvl-px">$${fmtPx(selected, lv.price)}</div>
-        <div class="lvl-dist">${pctStr}</div>
-      </div>
-    </div>`;
+    return '<div class="lvl-row' + (near ? ' near' : '') + '">'
+      + '<div class="lvl-left"><span class="lvl-tag ' + tagClass + '">' + tagText + '</span>'
+      + '<span class="lvl-name">' + lv.name + nearHint + '</span></div>'
+      + '<div class="lvl-right"><div class="lvl-px">$' + fmtPx(selected, lv.price) + '</div>'
+      + '<div class="lvl-dist">' + pctStr + '</div></div></div>';
   }).join('');
+  $('srBody').innerHTML = strip + rows;
 }
 
 function renderSRAll(){
@@ -2353,7 +2683,8 @@ function renderSRAll(){
     function cell(kind, lv){
       if (!lv) return `<div class="ln ${kind}"><span class="lab">${kind==='r'?'阻力':'支撑'}</span><div class="vals"><span class="px">—</span></div></div>`;
       const p = pct(lv);
-      return `<div class="ln ${kind}"><span class="lab">${kind==='r'?'阻力':'支撑'}</span><div class="vals"><span class="px">$${fmtPx(a.id, lv.price)}</span>${p?`<span class="pct">${p}</span>`:''}</div></div>`;
+      const tip = (lv.name || '').replace(/"/g, '');
+      return `<div class="ln ${kind}" title="${tip}"><span class="lab">${kind==='r'?'阻力':'支撑'}</span><div class="vals"><span class="px">$${fmtPx(a.id, lv.price)}</span>${p?`<span class="pct">${p}</span>`:''}</div></div>`;
     }
     const active = selected===a.id ? ' active-coin' : '';
     const spotTxt = ref!=null ? ('$'+fmtPx(a.id, ref)) : '';
@@ -2934,18 +3265,35 @@ function renderNews(items, sourceLabel){
   }
 }
 
-function closedBarsFromKlines(raw){
+function splitKlineRows(raw){
   const now = Date.now();
-  const rows = (raw || []).filter(k => Number(k[6]) < now);
+  const closed = [];
+  let forming = null;
+  for (const k of raw || []){
+    const row = {
+      openMs: Number(k[0]),
+      open: Number(k[1]),
+      high: Number(k[2]),
+      low: Number(k[3]),
+      close: Number(k[4]),
+      closeMs: Number(k[6])
+    };
+    if (row.closeMs < now) closed.push(row);
+    else forming = row;
+  }
+  return {closed, forming};
+}
+function barsFromClosed(closed){
   return {
-    highs: rows.map(k => Number(k[2])),
-    lows: rows.map(k => Number(k[3])),
-    closes: rows.map(k => Number(k[4])),
-    openMs: rows.map(k => Number(k[0]))
+    highs: closed.map(r => r.high),
+    lows: closed.map(r => r.low),
+    closes: closed.map(r => r.close),
+    opens: closed.map(r => r.open),
+    openMs: closed.map(r => r.openMs)
   };
 }
 
-async function fetchClosedKlines(symbol, interval, limit){
+async function fetchSrKlines(symbol, interval, limit){
   const urls = [
     `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
     `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
@@ -2954,7 +3302,10 @@ async function fetchClosedKlines(symbol, interval, limit){
   for (const url of urls){
     try {
       const raw = await fetchJson(url);
-      if (Array.isArray(raw) && raw.length) return closedBarsFromKlines(raw);
+      if (Array.isArray(raw) && raw.length) {
+        const split = splitKlineRows(raw);
+        return {bars: barsFromClosed(split.closed), forming: split.forming};
+      }
     } catch (e) { lastErr = e; }
   }
   throw lastErr || new Error(symbol + ' ' + interval + ' 加载失败');
@@ -2962,12 +3313,18 @@ async function fetchClosedKlines(symbol, interval, limit){
 
 async function loadIntradayOne(id){
   const sym = state[id].meta.symbol;
-  const [h4, h1] = await Promise.all([
-    fetchClosedKlines(sym, '4h', 1000),
-    fetchClosedKlines(sym, '1h', 72)
+  const [h4, h1, d3] = await Promise.all([
+    fetchSrKlines(sym, '4h', 1000),
+    fetchSrKlines(sym, '1h', 72),
+    fetchSrKlines(sym, '1d', 3).catch(()=>null)
   ]);
-  if (h4) state[id].h4 = h4;
-  if (h1) state[id].h1 = h1;
+  if (h4 && h4.bars && h4.bars.highs.length) {
+    state[id].h4 = h4.bars;
+    if (h4.forming) state[id].formingH4 = h4.forming;
+  }
+  // 结构梯不用正在形成的 1 小时高低
+  if (h1 && h1.bars && h1.bars.highs.length) state[id].h1 = h1.bars;
+  if (d3 && d3.forming) state[id].formingDaily = d3.forming;
   if (state[id].daily) computeSR(id);
 }
 
@@ -2979,8 +3336,8 @@ async function loadDailyOne(id){
   const meta = state[id].meta;
   const sym = meta.symbol;
   const intraP = Promise.all([
-    fetchClosedKlines(sym, '4h', 1000).catch(()=>null),
-    fetchClosedKlines(sym, '1h', 72).catch(()=>null)
+    fetchSrKlines(sym, '4h', 1000).catch(()=>null),
+    fetchSrKlines(sym, '1h', 72).catch(()=>null)
   ]);
   const urls = [
     `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1d&limit=1000`,
@@ -2995,27 +3352,33 @@ async function loadDailyOne(id){
   }
   if (!raw) throw lastErr || new Error(id+' 日线加载失败');
 
-  const now = Date.now();
-  const rows = raw.filter(k => Number(k[6]) < now);
-  const dates = rows.map(k => ymd(Number(k[0])));
-  const opens = rows.map(k => Number(k[1]));
-  const highs = rows.map(k => Number(k[2]));
-  const lows = rows.map(k => Number(k[3]));
-  const closes = rows.map(k => Number(k[4]));
+  const splitDaily = splitKlineRows(raw);
+  const rows = splitDaily.closed;
+  if (!rows.length) throw new Error(id+' 没有已收盘日线');
+  if (splitDaily.forming) state[id].formingDaily = splitDaily.forming;
+  const dates = rows.map(r => ymd(r.openMs));
+  const opens = rows.map(r => r.open);
+  const highs = rows.map(r => r.high);
+  const lows = rows.map(r => r.low);
+  const closes = rows.map(r => r.close);
   const t2 = computeSanXuanEr(opens, highs, lows, closes, dates);
   const rsiArr = wilderRsi(closes, 14);
   const rsiLast = rsiArr[rsiArr.length - 1];
   state[id].daily = {closes, opens, highs, lows, dates, t2, rsi:rsiArr};
   state[id].t2Summary = t2.last;
   state[id].rsi = (rsiLast!=null && Number.isFinite(rsiLast)) ? rsiLast : null;
+  // 页面 ATR% = 真实 ATR14 / 最近已收盘收盘价，不使用阻尼 ATR
   const atrV = atr14(highs, lows, closes);
   const lastC = closes[closes.length - 1];
   state[id].atrPct = (lastC > 0 && atrV > 0) ? (atrV / lastC) * 100 : null;
   state[id].err = null;
   try {
     const [h4, h1] = await intraP;
-    if (h4) state[id].h4 = h4;
-    if (h1) state[id].h1 = h1;
+    if (h4 && h4.bars && h4.bars.highs.length) {
+      state[id].h4 = h4.bars;
+      if (h4.forming) state[id].formingH4 = h4.forming;
+    }
+    if (h1 && h1.bars && h1.bars.highs.length) state[id].h1 = h1.bars;
   } catch (e) {}
   updateBadges(id);
   computeSR(id);
@@ -3056,12 +3419,21 @@ function renderT2(){
   const el = $('t2pos');
   el.textContent = last.inPos ? '持有' : '空仓';
   el.className = 'status ' + (last.inPos ? 'ok' : 'warn');
+  const shortMa = maSampleShort(selected);
   $('t2votes').textContent = String(last.votes);
+  const den = $('t2voteDen');
+  if (den) den.textContent = shortMa ? ' / 3 · 样本不足，牛市票暂不可比' : ' / 3';
   $('t2bd').outerHTML = '<span id="t2bd" class="status '+(last.bd?'ok':'warn')+'">'+(last.bd?'看多':'看空')+'</span>';
   $('t2ichi').outerHTML = '<span id="t2ichi" class="status '+(last.ichi?'ok':'warn')+'">'+(last.ichi?'看多':'看空')+'</span>';
-  $('t2ma').outerHTML = '<span id="t2ma" class="status '+(last.aboveMa?'ok':'warn')+'">'+(last.aboveMa?'看多':'看空')+'</span>';
-  $('t2bull').outerHTML = '<span id="t2bull" class="status '+(last.aboveMa?'ok':'warn')+'">'+(last.aboveMa?'是':'否')+'</span>';
-  $('t2ma200').textContent = '$'+fmtPx(selected, last.ma200);
+  if (shortMa) {
+    $('t2ma').outerHTML = '<span id="t2ma" class="status neutral">样本不足</span>';
+    $('t2bull').outerHTML = '<span id="t2bull" class="status neutral">样本不足</span>';
+    $('t2ma200').textContent = '样本不足，牛市票暂不可比';
+  } else {
+    $('t2ma').outerHTML = '<span id="t2ma" class="status '+(last.aboveMa?'ok':'warn')+'">'+(last.aboveMa?'看多':'看空')+'</span>';
+    $('t2bull').outerHTML = '<span id="t2bull" class="status '+(last.aboveMa?'ok':'warn')+'">'+(last.aboveMa?'是':'否')+'</span>';
+    $('t2ma200').textContent = '$'+fmtPx(selected, last.ma200);
+  }
   $('t2tk').textContent = '$'+fmtPx(selected, last.tenkan)+' / $'+fmtPx(selected, last.kijun);
   $('t2cloud').textContent = last.cloudTop==null ? '—' : ('$'+fmtPx(selected, last.cloudTop));
   $('t2asOf').textContent = 'UTC '+st.daily.dates[st.daily.dates.length-1];
@@ -3747,6 +4119,7 @@ setInterval(loadNews, 180000);
 setInterval(loadMarketExtras, 120000);
 setInterval(loadAllIntraday, 120000);
 setInterval(() => buildSynthAnalysis(true), SYNTH_MS);
+setInterval(() => refreshFastSynth(true), SYNTH_PRICE_MS);
 // first synth when metrics arrive; also a delayed retry in case extras lag behind daily
 setTimeout(() => maybeBuildSynth(false), 8000);
 setTimeout(() => maybeBuildSynth(false), 20000);
