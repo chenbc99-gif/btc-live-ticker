@@ -415,6 +415,23 @@
     .c-meta { font-size:10px; color:var(--muted2); line-height:1.4; }
     .c-meta b { color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
     .c-meta .mute { opacity:.8; }
+    .c-val.up { color:var(--up); }
+    .c-val.down { color:var(--down); }
+    .c-val.neu { color:var(--blue); }
+    .c-val.warm { color:var(--orange); }
+    .c-val.mute { color:var(--muted); font-weight:650; }
+
+    /* BTC 链上估值：紧凑一条，不另做看板 */
+    .val-panel {
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      padding:8px 11px 9px; margin-top:var(--gap); box-shadow:var(--shadow);
+    }
+    .val-head {
+      display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
+      margin-bottom:1px;
+    }
+    .val-panel .cycle-sub { margin:1px 0 6px; }
+    .val-panel .c-val { font-size:15px; margin:2px 0 3px; }
 
     /* ===== K-line modal ===== */
     .kbtn {
@@ -563,10 +580,17 @@
       }
       .news-list { flex:none; max-height:min(52vh, 480px); }
 
-      /* 4) 周期估值放最底（脚注前） */
-      .blk-cycle { order:9; margin:0 0 10px; padding:9px 10px; }
+      /* 4) 链上估值与周期估值接在一起，脚注前 */
+      .blk-val {
+        order:9; margin:0; padding:8px 10px 9px;
+        border-radius:12px 12px 0 0; border-bottom:none;
+      }
+      .blk-cycle {
+        order:10; margin:-1px 0 10px; padding:9px 10px;
+        border-radius:0 0 12px 12px;
+      }
 
-      .blk-note { order:10; margin:0; }
+      .blk-note { order:11; margin:0; }
 
       .sr-all-grid { grid-template-columns:1fr; gap:8px; }
       .sr-mini { padding:11px 12px; }
@@ -598,7 +622,7 @@
       <div class="top-row">
         <div>
           <h1>BTC盯盘</h1>
-          <div class="sub">多币种 · 三选二（BDCP持股 + 一目均衡表 + MA200）+ 牛市状态 + BTC 周期估值（ahr999/Mayer/Pi/PowerLaw/Puell·ETF优化）；支撑/阻力（结构优先 v3·关键位+阻尼ATR·近端具体命名）只显示现价上下最近档位；币圈快讯优先律动 · 近 6 小时。点选币种切换详情；点「K线」弹窗看蜡烛图。只提醒，不下单。非投资建议。</div>
+          <div class="sub">多币种 · 三选二（BDCP持股 + 一目均衡表 + MA200）+ 牛市状态 + BTC 周期估值（ahr999/Mayer/Pi/PowerLaw/Puell·ETF优化）；支撑/阻力（结构优先 v3·关键位+阻尼ATR·近端具体命名）只显示现价上下最近档位；币圈快讯优先律动 · 近 6 小时。点选币种切换详情；点「K线」弹窗看蜡烛图。BTC 链上估值另看 MVRV、平均持有成本、亏损供应和已实现市值 30 日变化。只提醒，不下单。非投资建议。</div>
         </div>
         <span class="pill"><span id="dot" class="dot"></span><span id="conn">连接中…</span></span>
       </div>
@@ -708,6 +732,54 @@
     </div>
 
     
+    <div class="val-panel blk-val" id="valPanel">
+      <div class="val-head">
+        <div class="cycle-title">BTC 链上估值 <span>底部区间参考 · 原始值</span>
+          <button type="button" class="help-btn" id="valHelp" data-help="val" aria-label="链上估值说明" title="链上估值说明">?</button>
+        </div>
+        <span class="ahr-zone z-neu" id="valZone"><span class="z-main">加载中</span></span>
+      </div>
+      <div class="cycle-sub">绿档偏冷，红档偏热。分档写死在页面里，只为对照，不是买卖打分。恐惧贪婪与上方同一来源。</div>
+      <div class="cycle-grid">
+        <div class="c-cell">
+          <div class="c-name"><b class="hint-link" data-help="vmvrv">MVRV</b><span>市值/已实现</span></div>
+          <div class="c-val mute" id="valMvrv">—</div>
+          <div class="c-tags"><span class="ahr-zone z-neu" id="valMvrvZone"><span class="z-main">加载中</span></span></div>
+          <div class="c-meta" id="valMvrvMeta">Coin Metrics 日频</div>
+        </div>
+        <div class="c-cell">
+          <div class="c-name"><b class="hint-link" data-help="vcost">平均成本</b><span>全体持币</span></div>
+          <div class="c-val mute" id="valCost">—</div>
+          <div class="c-tags"><span class="ahr-zone z-neu" id="valCostZone"><span class="z-main">加载中</span></span></div>
+          <div class="c-meta" id="valCostMeta">市值 ÷ MVRV ÷ 流通量</div>
+        </div>
+        <div class="c-cell">
+          <div class="c-name"><b class="hint-link" data-help="vloss">亏损供应</b><span>币数占比</span></div>
+          <div class="c-val mute" id="valLoss">—</div>
+          <div class="c-tags"><span class="ahr-zone z-neu" id="valLossZone"><span class="z-main">加载中</span></span></div>
+          <div class="c-meta" id="valLossMeta">不是市值加权浮亏</div>
+        </div>
+        <div class="c-cell">
+          <div class="c-name"><b class="hint-link" data-help="vflow">30日资金</b><span>已实现市值</span></div>
+          <div class="c-val mute" id="valFlow">—</div>
+          <div class="c-tags"><span class="ahr-zone z-neu" id="valFlowZone"><span class="z-main">加载中</span></span></div>
+          <div class="c-meta" id="valFlowMeta">30 个日历日的变动</div>
+        </div>
+        <div class="c-cell">
+          <div class="c-name"><b class="hint-link" data-help="fng">恐惧贪婪</b><span>同一来源</span></div>
+          <div class="c-val mute" id="valFg">—</div>
+          <div class="c-tags"><span class="ahr-zone z-neu" id="valFgZone"><span class="z-main">加载中</span></span></div>
+          <div class="c-meta" id="valFgMeta">与上方指数相同，不另拉</div>
+        </div>
+        <div class="c-cell">
+          <div class="c-name"><b class="hint-link" data-help="vma">MA120</b><span>纯参考</span></div>
+          <div class="c-val mute" id="valMa">—</div>
+          <div class="c-tags"><span class="ahr-zone z-neu" id="valMaZone"><span class="z-main">纯参考</span></span></div>
+          <div class="c-meta" id="valMaMeta">不参与三选二，也不改 SMA200</div>
+        </div>
+      </div>
+    </div>
+
     <div class="cycle-panel blk-cycle" id="cyclePanel" title="周期估值用币安已收盘日线；ETF优化=近2年滚动分位+压缩带；Puell为发行量近似（3.125×144×收盘，不含手续费）">
       <div class="cycle-head">
         <div>
@@ -765,7 +837,7 @@
       </div>
     </div>
 
-    <p class="note blk-note">规则：策略仅用已收盘 UTC 日线（不含当日未收盘 K）；三选二至少 2 票看多则持有；牛市状态 = 收盘价在 200 日均线上方。支撑/阻力（结构优先 v3） = 顶部关键位（今高低、昨高低、ISO周高低、24h高低；未收盘单独标注；SMA200 仅在距现价 10% 以内列入），不聚类、不按 ATR 过滤。结构梯仍用已收盘日线摆动（左右各3根、近200根，高点阻力、低点支撑，不换边），并加入未收盘的今日高低、当前4小时高低与本周高低（标注未收盘）；不使用正在走的1小时高低。另有已收盘约12小时极值、已收盘4小时摆动（约120日）与近15日4小时高低、ISO近8周、昨高低、近5日高低。聚类和贴价过滤用阻尼 ATR = min(真实ATR14, 1.15×近14根日线真实波幅中位数)；页面上的 ATR% 仍是未阻尼的 ATR14。簇宽 min(0.28×阻尼ATR, 现价0.45%)。代表价按重要性：今/昨/周/24h 优先，其次约15日内的4小时，再次小时或更旧摆动；同一级再取离现价更近、触碰更多的价。普通噪音过滤 max(现价0.12%, min(0.08×阻尼ATR, 现价0.25%))；今/昨/周高低只要距现价至少 0.12% 就保留（含刚跌破）。昨/近5日/周/今/4小时/小时跌破或升破后换到现价另一侧。超过约30日的旧摆动，若该侧还有今/昨/周或≤15日结构，不能占最近两档，只放到更远一档。每侧2档，10% 以内且与已选档间距约等于簇宽时可再加第3档。和关键位重复的档位保留，并用具体名称（如昨低已破、今低、7–8月密集）。经典枢轴只在附近没有结构位时补位，且不得出现在现价错误一侧；不把现价上下两侧并成一簇。仅供参考，非预测。快讯：优先律动 BlockBeats 与 Tree News，辅以其它来源；只保留约 6 小时内重要条目；英文标题自动译成中文。BTC 另显「周期估值·ETF优化」：ahr999/Mayer/2年均线倍数/Pi距金叉/Power Law偏离/Puell近似；合流热度为近2年分位均值。固定旧阈值已钝化，仅供参考。超买超卖用日线 RSI(14)：≥70 超买、≤30 超卖；同框补充 24h高低与区间位置（币安 ticker）、距MA200%（已收盘日线）、USDT-M 资金费率（币安期货 premiumIndex）、日线 ATR(14)%、恐惧贪婪（alternative.me）、BTC/ETH 主导率（CoinGecko）。行情来自币安公开接口（BTC/ETH/SOL/BNB/HYPE/ZEC）。只提醒，不下单。非投资建议。</p>
+    <p class="note blk-note">规则：策略仅用已收盘 UTC 日线（不含当日未收盘 K）；三选二至少 2 票看多则持有；牛市状态 = 收盘价在 200 日均线上方。支撑/阻力（结构优先 v3） = 顶部关键位（今高低、昨高低、ISO周高低、24h高低；未收盘单独标注；SMA200 仅在距现价 10% 以内列入），不聚类、不按 ATR 过滤。结构梯仍用已收盘日线摆动（左右各3根、近200根，高点阻力、低点支撑，不换边），并加入未收盘的今日高低、当前4小时高低与本周高低（标注未收盘）；不使用正在走的1小时高低。另有已收盘约12小时极值、已收盘4小时摆动（约120日）与近15日4小时高低、ISO近8周、昨高低、近5日高低。聚类和贴价过滤用阻尼 ATR = min(真实ATR14, 1.15×近14根日线真实波幅中位数)；页面上的 ATR% 仍是未阻尼的 ATR14。簇宽 min(0.28×阻尼ATR, 现价0.45%)。代表价按重要性：今/昨/周/24h 优先，其次约15日内的4小时，再次小时或更旧摆动；同一级再取离现价更近、触碰更多的价。普通噪音过滤 max(现价0.12%, min(0.08×阻尼ATR, 现价0.25%))；今/昨/周高低只要距现价至少 0.12% 就保留（含刚跌破）。昨/近5日/周/今/4小时/小时跌破或升破后换到现价另一侧。超过约30日的旧摆动，若该侧还有今/昨/周或≤15日结构，不能占最近两档，只放到更远一档。每侧2档，10% 以内且与已选档间距约等于簇宽时可再加第3档。和关键位重复的档位保留，并用具体名称（如昨低已破、今低、7–8月密集）。经典枢轴只在附近没有结构位时补位，且不得出现在现价错误一侧；不把现价上下两侧并成一簇。仅供参考，非预测。快讯：优先律动 BlockBeats 与 Tree News，辅以其它来源；只保留约 6 小时内重要条目；英文标题自动译成中文。BTC 另显「周期估值·ETF优化」：ahr999/Mayer/2年均线倍数/Pi距金叉/Power Law偏离/Puell近似；合流热度为近2年分位均值。固定旧阈值已钝化，仅供参考。超买超卖用日线 RSI(14)：≥70 超买、≤30 超卖；同框补充 24h高低与区间位置（币安 ticker）、距MA200%（已收盘日线）、USDT-M 资金费率（币安期货 premiumIndex）、日线 ATR(14)%、恐惧贪婪（alternative.me）、BTC/ETH 主导率（CoinGecko）。行情来自币安公开接口（BTC/ETH/SOL/BNB/HYPE/ZEC）。BTC 链上估值：MVRV 用 Coin Metrics 社区接口日频 CapMVRVCur（2011-01-01 起）；平均成本 = 市值 ÷ MVRV ÷ 流通量；30 日资金 = 已实现市值相对 30 个日历日前的变动。σ 为这段日频的总体标准差。亏损供应 = BGeometrics 当日处于亏损的 BTC 枚数 ÷ 流通量，是币数占比，不是市值加权浮亏。短期/长期持有者成本和市值加权浮亏的免费接口大约滞后 7 日，快跌时会失真，页面不采用。MA120 只用已收盘日线单独计算，仅作参考，不改变 SMA200，也不进入三选二或牛市状态。恐惧贪婪仍只用 alternative.me 这一份。只提醒，不下单。非投资建议。</p>
   </div>
 
   <div class="tip-backdrop" id="tipModal" aria-hidden="true">
@@ -1436,6 +1508,39 @@ const METRIC_HELP = {
   ethd: {
     title: 'ETH 主导率',
     html: `<p>以太坊市值占加密总市值的比例（CoinGecko）。</p><p>和 BTC.D 对照，可粗看资金在主流币之间的切换。</p>`
+  },
+  val: {
+    title: 'BTC 链上估值',
+    html: `<p>把几项能公开核对的原始值放在一起，看价格相对链上成本偏冷还是偏热。<b>不合成 0–100 分</b>，页面上的「偏冷 x/n」只是数有几项落在冷档。</p>
+      <p>冷档计入：MVRV 的 σ、现价相对平均成本、亏损供应、已实现市值 30 日变化、恐惧贪婪。MA120 只作参考，不投票，也不改三选二里的 SMA200。</p>
+      <p>短期持有者成本、长期持有者成本，以及按市值加权的浮亏占比，免费接口大约滞后 7 日，快跌时会对不上现价，所以不显示。</p>`
+  },
+  vmvrv: {
+    title: 'MVRV',
+    html: `<p>Coin Metrics 日频 <b>CapMVRVCur</b>：市值 ÷ 已实现市值。小于 1 表示现价整体低于大家的持币成本。</p>
+      <p>σ =（当日 MVRV − 均值）÷ 总体标准差。样本是 <b>2011-01-01</b> 起每一根有数的日频，分母用天数 N，不是 N−1。</p>
+      <p>固定分档：≤ −1 低估，≤ −0.5 偏低估，&lt; 1 中性，&lt; 2 偏高估，其余高估。MVRV &lt; 1 直接标「低于已实现价格」。</p>`
+  },
+  vcost: {
+    title: '平均持有成本',
+    html: `<p>全体持币的已实现价格 = 市值 ÷ MVRV ÷ 流通量。三项都来自 Coin Metrics 同一天的日频，不是短期或长期持有者的单独成本。</p>
+      <p>现价相对这条成本：≤ 0 低于平均成本（冷），≤ 25% 略高于成本（中，仍在成本之上，不算底部），≤ 80% 明显高于成本（中），更高为远离成本（热）。</p>`
+  },
+  vloss: {
+    title: '亏损供应',
+    html: `<p>BGeometrics 当天处于亏损的 BTC <b>枚数</b> ÷ 流通量。看有多少币的成本高于现价，不是「亏损金额占市值」。</p>
+      <p>固定分档：≥ 55% 很高，≥ 45% 偏高，≥ 25% 中性，≥ 15% 偏少，再低则多数币在盈利。2018、2022 一类低点附近，亏损币常常接近或超过一半。</p>`
+  },
+  vflow: {
+    title: '30 日资金',
+    html: `<p>已实现市值 = 市值 ÷ MVRV。这里用末日减去 <b>30 个日历日</b>前的已实现市值，再除以起点。</p>
+      <p>币按最后一次移动的价格重新计价，所以这条差额常被当作链上资金进出的近似。它不是 ETF 申赎，也不是交易所净流入。</p>
+      <p>固定分档：≤ −3% 大幅流出，≤ −1% 净流出，±1% 内大致平衡，&lt; +3% 净流入，其余大幅流入。</p>`
+  },
+  vma: {
+    title: 'MA120 参考',
+    html: `<p>用本页已加载的 BTC <b>已收盘</b>日线单独算 120 日简单均线，旁边附上现成的 MA200 距离。</p>
+      <p>只供对照。牛市状态和三选二仍只用原来的 SMA200，算法和用法都不变。</p>`
   }
 };
 
@@ -1477,6 +1582,7 @@ function initMetricHelp(){
     });
   }
   bindMetricHelp($('rsiBand'));
+  bindMetricHelp($('valPanel'));
   const tip = $('tipModal');
   if (tip && !tip._helpBound) {
     tip._helpBound = true;
@@ -1590,6 +1696,7 @@ function paintExtraStats(){
       else { atrEl.textContent = st.atrPct.toFixed(2)+'%'; atrEl.className = 'neu'; }
     }
   }
+  if (typeof renderValuation === 'function') renderValuation();
 }
 async function loadFundingRates(){
   const urls = [
@@ -1627,22 +1734,27 @@ async function loadFearGreed(){
     const v = row ? Number(row.value) : NaN;
     const el = $('fngVal');
     const sub = $('fngSub');
-    if (!el) return;
     if (!Number.isFinite(v)) {
       marketMood.fng = null; marketMood.fngLabel = null;
-      el.textContent = '—'; el.className = 'mv mute'; if (sub) sub.textContent = '暂无'; return;
+      if (el) { el.textContent = '—'; el.className = 'mv mute'; }
+      if (sub) sub.textContent = '暂无';
+    } else {
+      marketMood.fng = v;
+      marketMood.fngLabel = fngClassCN(row.value_classification);
+      if (el) {
+        el.textContent = String(Math.round(v));
+        el.className = 'mv ' + fngTone(v);
+      }
+      if (sub) sub.textContent = marketMood.fngLabel;
     }
-    marketMood.fng = v;
-    marketMood.fngLabel = fngClassCN(row.value_classification);
-    el.textContent = String(Math.round(v));
-    el.className = 'mv ' + fngTone(v);
-    if (sub) sub.textContent = marketMood.fngLabel;
   } catch (e) {
     marketMood.fng = null; marketMood.fngLabel = null;
     const el = $('fngVal'); if (el) { el.textContent = '—'; el.className = 'mv mute'; }
     const sub = $('fngSub'); if (sub) sub.textContent = '拉取失败';
     console.warn('fng', e);
   }
+  if (typeof renderValuation === 'function') renderValuation();
+  if (typeof pingSynthVal === 'function') pingSynthVal();
 }
 async function loadDominance(){
   try {
@@ -1675,6 +1787,493 @@ async function loadDominance(){
 async function loadMarketExtras(){
   await Promise.allSettled([loadFearGreed(), loadDominance(), loadFundingRates()]);
   maybeBuildSynth(false);
+}
+
+/**
+ * BTC 链上估值。只展示能对上公开定义的原始值，再用固定阈值数「偏冷项」。
+ * 不仿外部看板的 0–100 分，也不把 MA120 算进三选二。
+ *
+ * 数据：
+ * - Coin Metrics 社区日频 CapMVRVCur、CapMrktCurUSD、SplyCur（浏览器可跨域）。
+ *   已实现价格 = 市值 ÷ MVRV ÷ 流通量。
+ *   30 日资金 = 已实现市值(t) − 已实现市值(t−30 个日历日)。
+ *   MVRV 的 σ 用 2011-01-01 起全部有效日频的总体标准差（除以 N）。
+ * - 亏损供应 = BGeometrics supply-loss ÷ supply-current（币数，不是市值加权浮亏）。
+ *   若响应带 delayed，或两边日期不一致，则整格作废。
+ * - 恐惧贪婪只读本页 marketMood（alternative.me），不发第二次请求。
+ * - MA120 = 已收盘日线的 SMA(120)，只显示；SMA200 仍用三选二里那条。
+ *
+ * 不采用的序列：BGeometrics 的 STH/LTH 已实现价格、NUPL、市值加权浮亏（nul）
+ * 免费层大约滞后 7 日，快跌时和现价脱节。
+ *
+ * 冷热分档（缺数据的项不投票，也不当成中性）：
+ * MVRV：< 1 低于已实现价格（冷）；z≤−1 低估（冷）；z≤−0.5 偏低估（冷）；
+ *   z<1 中性；z<2 偏高估（热）；其余高估（热）。
+ * 现价/平均成本−1：≤0 冷；≤25% 中（仍在成本上方）；≤80% 中；>80% 热。
+ * 亏损供应：≥55% 冷；≥45% 冷；≥25% 中；≥15% 热；<15% 热。
+ * 30 日已实现市值变化：≤−3% 冷；≤−1% 冷；<+1% 中；<+3% 热；其余热。
+ * 恐惧贪婪：≤25 冷；≤45 冷；<55 中；<75 热；其余热。标签沿用 alternative.me 的中文分类。
+ * 汇总：冷≥4 且热=0 → 多项偏冷；冷≥2 且冷>热 且冷/n≥0.6 → 偏冷；热侧对称；其余信号分歧。
+ */
+const VAL_CACHE_KEY = 'btcVal.v1';
+const VAL_CACHE_MS = 4 * 60 * 60 * 1000;
+const valuation = {
+  phase: 'loading',
+  cm: null,
+  supply: null,
+  cmError: '',
+  supplyError: ''
+};
+let valFlight = null;
+let valDomSig = '';
+
+function readValCache(){
+  try {
+    const raw = localStorage.getItem(VAL_CACHE_KEY);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    if (!o || typeof o.at !== 'number') return null;
+    return o;
+  } catch (e) { return null; }
+}
+function writeValCache(){
+  try {
+    const o = { at: Date.now(), cm: valuation.cm, supply: valuation.supply };
+    localStorage.setItem(VAL_CACHE_KEY, JSON.stringify(o));
+  } catch (e) {}
+}
+function applyValCache(o){
+  if (o.cm && o.cm.mvrv > 0 && o.cm.realized > 0) valuation.cm = o.cm;
+  if (o.supply && o.supply.lossPct >= 0 && o.supply.supplyBtc > 0) valuation.supply = o.supply;
+  valuation.phase = valuation.cm ? 'ready' : valuation.phase;
+}
+function valZone(label, cls, side){
+  return { label: label, cls: cls || 'z-neu', side: side || null };
+}
+function mvrvValZone(z, mvrv){
+  if (mvrv > 0 && mvrv < 1) return valZone('低于已实现价格', 'z-buy', 'cold');
+  if (z == null || !Number.isFinite(z)) return valZone('—', 'z-neu', null);
+  if (z <= -1) return valZone('低估', 'z-buy', 'cold');
+  if (z <= -0.5) return valZone('偏低估', 'z-dca', 'cold');
+  if (z < 1) return valZone('中性', 'z-neu', 'neutral');
+  if (z < 2) return valZone('偏高估', 'z-high', 'hot');
+  return valZone('高估', 'z-foam', 'hot');
+}
+function costValZone(prem){
+  if (prem == null || !Number.isFinite(prem)) return valZone('等待现价', 'z-neu', null);
+  if (prem <= 0) return valZone('低于平均成本', 'z-buy', 'cold');
+  if (prem <= 0.25) return valZone('略高于成本', 'z-neu', 'neutral');
+  if (prem <= 0.80) return valZone('明显高于成本', 'z-neu', 'neutral');
+  return valZone('远离成本', 'z-high', 'hot');
+}
+function lossValZone(pct){
+  if (pct == null || !Number.isFinite(pct)) return valZone('—', 'z-neu', null);
+  if (pct >= 55) return valZone('亏损供应很高', 'z-buy', 'cold');
+  if (pct >= 45) return valZone('亏损供应偏高', 'z-dca', 'cold');
+  if (pct >= 25) return valZone('中性', 'z-neu', 'neutral');
+  if (pct >= 15) return valZone('亏损供应偏少', 'z-high', 'hot');
+  return valZone('多数币在盈利', 'z-foam', 'hot');
+}
+function flowValZone(pct){
+  if (pct == null || !Number.isFinite(pct)) return valZone('—', 'z-neu', null);
+  if (pct <= -3) return valZone('大幅流出', 'z-buy', 'cold');
+  if (pct <= -1) return valZone('净流出', 'z-dca', 'cold');
+  if (pct < 1) return valZone('大致平衡', 'z-neu', 'neutral');
+  if (pct < 3) return valZone('净流入', 'z-high', 'hot');
+  return valZone('大幅流入', 'z-foam', 'hot');
+}
+function fngValZone(v, label){
+  if (v == null || !Number.isFinite(v)) return valZone(label || '—', 'z-neu', null);
+  let side = 'neutral', cls = 'z-neu';
+  if (v <= 25) { side = 'cold'; cls = 'z-buy'; }
+  else if (v <= 45) { side = 'cold'; cls = 'z-dca'; }
+  else if (v < 55) { side = 'neutral'; cls = 'z-neu'; }
+  else if (v < 75) { side = 'hot'; cls = 'z-high'; }
+  else { side = 'hot'; cls = 'z-foam'; }
+  return valZone(label || '—', cls, side);
+}
+function maRefZone(pct){
+  if (pct == null || !Number.isFinite(pct)) return valZone('纯参考', 'z-neu', null);
+  return valZone((pct < 0 ? '现价在 MA120 下' : '现价在 MA120 上') + '（纯参考）', 'z-neu', null);
+}
+function tallyValZone(cold, hot, n){
+  if (!n) return valZone('等待数据', 'z-neu', null);
+  const hint = n < 4 ? '项数少，看原始值' : '看原始值';
+  let name = '信号分歧', cls = 'z-neu';
+  if (cold >= 4 && hot === 0) { name = '多项偏冷'; cls = 'z-buy'; }
+  else if (cold >= 2 && cold > hot && cold / n >= 0.6) { name = '偏冷'; cls = 'z-dca'; }
+  else if (hot >= 4 && cold === 0) { name = '多项偏热'; cls = 'z-foam'; }
+  else if (hot >= 2 && hot > cold && hot / n >= 0.6) { name = '偏热'; cls = 'z-high'; }
+  return valZone(name + ' ' + cold + '/' + n + '（' + hint + '）', cls, null);
+}
+function fmtSigma(z){
+  if (z == null || !Number.isFinite(z)) return '—';
+  return (z > 0 ? '+' : '') + z.toFixed(2) + 'σ';
+}
+function fmtFlowUsd(n){
+  if (n == null || !Number.isFinite(n)) return '—';
+  const sign = n > 0 ? '+' : (n < 0 ? '-' : '');
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return sign + '$' + (abs / 1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(0) + 'M';
+  return sign + '$' + fmt(abs, 0);
+}
+function fmtBtcWan(n){
+  if (n == null || !Number.isFinite(n)) return '—';
+  if (Math.abs(n) >= 1e8) return (n / 1e8).toFixed(2) + '亿';
+  if (Math.abs(n) >= 1e4) return (n / 1e4).toFixed(0) + '万';
+  return fmt(n, 0);
+}
+function valAgeNote(ymdStr){
+  const ms = ymdToMs(ymdStr);
+  if (ms == null) return '';
+  const days = (Date.now() - ms) / 86400000;
+  return days > 6 ? ' · 偏旧' : '';
+}
+function btcMa120Value(){
+  const st = state.BTC;
+  if (!st || !st.daily || !st.daily.closes || st.daily.closes.length < 120) return null;
+  const arr = sma(st.daily.closes, 120);
+  const v = arr[arr.length - 1];
+  return v > 0 ? v : null;
+}
+function countValSide(bag, zone){
+  if (!zone || !zone.side) return;
+  bag.n += 1;
+  if (zone.side === 'cold') bag.cold += 1;
+  else if (zone.side === 'hot') bag.hot += 1;
+}
+function valuationView(){
+  const spot = assetSpot('BTC');
+  const cm = valuation.cm;
+  const sup = valuation.supply;
+  const bag = { cold: 0, hot: 0, n: 0 };
+  const out = { hasAny: false, asOf: '' };
+
+  if (cm && cm.mvrv > 0) {
+    const z = Number(cm.z);
+    const zone = mvrvValZone(z, Number(cm.mvrv));
+    countValSide(bag, zone);
+    out.mvrv = {
+      text: Number(cm.mvrv).toFixed(3),
+      zone: zone,
+      zText: fmtSigma(z),
+      meta: fmtSigma(z) + ' · 均值 ' + Number(cm.mean).toFixed(2) + ' · ' + cm.n + ' 日 · 截至 ' + cm.asOf + valAgeNote(cm.asOf)
+    };
+    out.asOf = cm.asOf;
+    out.hasAny = true;
+  } else if (valuation.cmError) {
+    out.mvrv = { text: '失败', mute: true, zone: valZone(valuation.cmError, 'z-neu', null), zText: '—', meta: 'Coin Metrics 未返回' };
+  }
+
+  if (cm && cm.realized > 0) {
+    const prem = (spot > 0) ? (spot / cm.realized - 1) : null;
+    const zone = costValZone(prem);
+    countValSide(bag, zone);
+    const premF = fmtSignedPct(prem == null ? null : prem * 100, 1);
+    out.cost = {
+      text: '$' + fmt(cm.realized, 0),
+      zone: zone,
+      premText: premF.txt,
+      premCls: premF.cls,
+      meta: (spot > 0 ? ('现价 $' + fmtPx('BTC', spot) + ' · ') : '') + '截至 ' + cm.asOf + ' · 市值÷MVRV÷供应'
+    };
+    out.hasAny = true;
+  } else if (valuation.cmError) {
+    out.cost = { text: '失败', mute: true, zone: valZone('同 MVRV', 'z-neu', null), premText: '—', premCls: 'mute', meta: '需要 MVRV 与市值' };
+  }
+
+  if (sup && sup.lossPct >= 0) {
+    const zone = lossValZone(Number(sup.lossPct));
+    countValSide(bag, zone);
+    out.loss = {
+      text: Number(sup.lossPct).toFixed(1) + '%',
+      zone: zone,
+      meta: fmtBtcWan(sup.lossBtc) + ' / ' + fmtBtcWan(sup.supplyBtc) + ' 枚 · 截至 ' + sup.asOf + valAgeNote(sup.asOf)
+    };
+    if (!out.asOf) out.asOf = sup.asOf;
+    out.hasAny = true;
+  } else if (valuation.supplyError) {
+    out.loss = { text: '失败', mute: true, zone: valZone(valuation.supplyError, 'z-neu', null), meta: 'BGeometrics 未返回' };
+  } else if (valuation.phase === 'loading') {
+    out.loss = null;
+  }
+
+  if (cm && cm.flowUsd != null && Number.isFinite(Number(cm.flowUsd))) {
+    const pct = Number(cm.flowPct);
+    const zone = flowValZone(pct);
+    countValSide(bag, zone);
+    const pctF = fmtSignedPct(pct, 1);
+    out.flow = {
+      text: fmtFlowUsd(Number(cm.flowUsd)),
+      cls: Number(cm.flowUsd) > 0 ? 'up' : (Number(cm.flowUsd) < 0 ? 'down' : 'neu'),
+      zone: zone,
+      html: '<span class="' + (Number(cm.flowUsd) < 0 ? 'down' : 'up') + '">' + fmtFlowUsd(Number(cm.flowUsd)) + '</span>',
+      meta: (cm.flowFrom || '—') + ' → ' + cm.asOf + ' · ' + pctF.txt
+    };
+    out.hasAny = true;
+  } else if (valuation.cmError) {
+    out.flow = { text: '失败', mute: true, cls: 'mute', zone: valZone('同 MVRV', 'z-neu', null), html: '—', meta: '需要前后两天的已实现市值' };
+  }
+
+  if (marketMood.fng != null && Number.isFinite(marketMood.fng)) {
+    const zone = fngValZone(marketMood.fng, marketMood.fngLabel);
+    countValSide(bag, zone);
+    out.fng = {
+      text: String(Math.round(marketMood.fng)),
+      cls: fngTone(marketMood.fng),
+      zone: zone,
+      meta: '与上方恐惧贪婪相同'
+    };
+    out.hasAny = true;
+  } else if (valuation.phase !== 'loading') {
+    out.fng = { text: '—', mute: true, cls: 'mute', zone: valZone('上方未加载', 'z-neu', null), meta: '不另拉一份' };
+  }
+
+  const ma120 = btcMa120Value();
+  const ma200 = state.BTC && state.BTC.t2Summary && state.BTC.t2Summary.ma200;
+  if (ma120 && spot > 0) {
+    const pct = (spot / ma120 - 1) * 100;
+    const pctF = fmtSignedPct(pct, 1);
+    let meta = 'MA120 $' + fmt(ma120, 0);
+    if (ma200 > 0) {
+      const p2 = (spot / ma200 - 1) * 100;
+      meta += ' · MA200 $' + fmt(ma200, 0) + '（' + fmtSignedPct(p2, 1).txt + '）';
+    }
+    meta += ' · 不参与三选二';
+    out.ma = { text: pctF.txt, cls: pctF.cls, zone: maRefZone(pct), meta: meta, pctText: pctF.txt, pctCls: pctF.cls };
+  } else {
+    out.ma = { text: '—', mute: true, cls: 'mute', zone: valZone('日线加载后', 'z-neu', null), meta: '不参与三选二，也不改 SMA200', pctText: null };
+  }
+
+  out.bag = bag;
+  out.tally = tallyValZone(bag.cold, bag.hot, bag.n);
+  out.failed = !out.hasAny && valuation.phase === 'error';
+  return out;
+}
+function setCVal(id, text, cls){
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'c-val' + (cls ? (' ' + cls) : '');
+}
+function renderValuation(){
+  if (!$('valMvrv')) return;
+  const v = valuationView();
+  const sig = JSON.stringify({
+    phase: valuation.phase,
+    m: v.mvrv || null,
+    c: v.cost || null,
+    l: v.loss || null,
+    f: v.flow ? { text: v.flow.text, meta: v.flow.meta, zone: v.flow.zone } : null,
+    g: v.fng || null,
+    a: v.ma || null,
+    t: v.tally
+  });
+  if (sig === valDomSig) return;
+  valDomSig = sig;
+
+  if (v.mvrv) {
+    setCVal('valMvrv', v.mvrv.text, v.mvrv.mute ? 'mute' : '');
+    fillZoneEl($('valMvrvZone'), v.mvrv.zone.label, v.mvrv.zone.cls);
+    $('valMvrvMeta').textContent = v.mvrv.meta;
+  }
+  if (v.cost) {
+    setCVal('valCost', v.cost.text, v.cost.mute ? 'mute' : '');
+    fillZoneEl($('valCostZone'), v.cost.zone.label, v.cost.zone.cls);
+    $('valCostMeta').textContent = v.cost.meta;
+  }
+  if (v.loss) {
+    setCVal('valLoss', v.loss.text, v.loss.mute ? 'mute' : '');
+    fillZoneEl($('valLossZone'), v.loss.zone.label, v.loss.zone.cls);
+    $('valLossMeta').textContent = v.loss.meta;
+  } else if (valuation.phase === 'loading') {
+    setCVal('valLoss', '—', 'mute');
+    fillZoneEl($('valLossZone'), '加载中', 'z-neu');
+  }
+  if (v.flow) {
+    setCVal('valFlow', v.flow.text, v.flow.mute ? 'mute' : v.flow.cls);
+    fillZoneEl($('valFlowZone'), v.flow.zone.label, v.flow.zone.cls);
+    $('valFlowMeta').textContent = v.flow.meta;
+  }
+  if (v.fng) {
+    setCVal('valFg', v.fng.text, v.fng.cls || (v.fng.mute ? 'mute' : ''));
+    fillZoneEl($('valFgZone'), v.fng.zone.label, v.fng.zone.cls);
+    $('valFgMeta').textContent = v.fng.meta;
+  }
+  if (v.ma) {
+    setCVal('valMa', v.ma.text, v.ma.cls || (v.ma.mute ? 'mute' : ''));
+    fillZoneEl($('valMaZone'), v.ma.zone.label, v.ma.zone.cls);
+    $('valMaMeta').textContent = v.ma.meta;
+  }
+  const tallyLabel = v.failed ? '拉取失败' : (v.hasAny ? v.tally.label : (valuation.phase === 'loading' ? '加载中' : '暂无'));
+  const tallyCls = v.failed ? 'z-neu' : (v.hasAny ? v.tally.cls : 'z-neu');
+  fillZoneEl($('valZone'), tallyLabel, tallyCls);
+}
+function bottomSynthHtml(){
+  const v = valuationView();
+  if (!v.hasAny) {
+    if (valuation.phase === 'loading') return null;
+    return 'BTC 链上估值：暂时拉不到链上数据，本页不填数。';
+  }
+  const bits = [];
+  if (v.mvrv && !v.mvrv.mute) {
+    bits.push('MVRV <b>' + v.mvrv.text + '</b>（' + v.mvrv.zText + '，' + shortZoneLabel(v.mvrv.zone.label) + '）');
+  }
+  if (v.cost && !v.cost.mute) {
+    const prem = v.cost.premText && v.cost.premText !== '—'
+      ? ('（现价 <span class="' + (v.cost.premCls || '') + '">' + v.cost.premText + '</span>）')
+      : '';
+    bits.push('平均成本 <b>' + v.cost.text + '</b>' + prem);
+  }
+  if (v.loss && !v.loss.mute) bits.push('亏损供应 <b>' + v.loss.text + '</b>');
+  if (v.flow && !v.flow.mute && v.flow.html) bits.push('30日已实现市值 ' + v.flow.html);
+  if (v.ma && v.ma.pctText) {
+    bits.push('MA120 参考 <span class="' + (v.ma.pctCls || '') + '">' + v.ma.pctText + '</span>');
+  }
+  if (!bits.length) return null;
+  let line = 'BTC 链上估值：' + bits.join('，') + '。';
+  if (v.asOf) line += '截至 <b>' + v.asOf + '</b>，';
+  const name = shortZoneLabel(v.tally.label);
+  const cls = v.tally.cls === 'z-buy' || v.tally.cls === 'z-dca' ? 'up'
+    : (v.tally.cls === 'z-high' || v.tally.cls === 'z-foam' ? 'down' : '');
+  line += (cls ? ('<span class="' + cls + '">' + name + '</span>') : name) + '。';
+  return line;
+}
+function pingSynthVal(){
+  if (synthBuiltOnce) refreshFastSynth(false);
+  else maybeBuildSynth(false);
+}
+async function fetchCmRows(){
+  let url = 'https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=btc&metrics=CapMVRVCur,CapMrktCurUSD,SplyCur&frequency=1d&start_time=2011-01-01&page_size=10000&paging_from=start';
+  const rows = [];
+  for (let guard = 0; url && guard < 5; guard++) {
+    const data = await fetchJson(url);
+    if (!data || !Array.isArray(data.data)) throw new Error('MVRV 格式异常');
+    for (let i = 0; i < data.data.length; i++) rows.push(data.data[i]);
+    url = data.next_page_url || '';
+  }
+  return rows;
+}
+async function fetchCmValuation(){
+  const rows = await fetchCmRows();
+  const pts = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const mvrv = Number(r.CapMVRVCur);
+    const mcap = Number(r.CapMrktCurUSD);
+    const sply = Number(r.SplyCur);
+    if (!(mvrv > 0) || !(mcap > 0) || !(sply > 0)) continue;
+    const d = String(r.time || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < '2011-01-01') continue;
+    pts.push({ d: d, mvrv: mvrv, mcap: mcap, sply: sply });
+  }
+  pts.sort(function(a, b){ return a.d < b.d ? -1 : (a.d > b.d ? 1 : 0); });
+  if (pts.length < 200) throw new Error('MVRV 样本不足');
+  let sum = 0;
+  for (let i = 0; i < pts.length; i++) sum += pts[i].mvrv;
+  const mean = sum / pts.length;
+  let acc = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const diff = pts[i].mvrv - mean;
+    acc += diff * diff;
+  }
+  const sd = Math.sqrt(acc / pts.length);
+  const last = pts[pts.length - 1];
+  const targetMs = ymdToMs(last.d) - 30 * 86400000;
+  const target = ymd(targetMs);
+  let prev = null;
+  for (let i = 0; i < pts.length; i++) {
+    if (pts[i].d <= target) prev = pts[i];
+    else break;
+  }
+  let flowUsd = null, flowPct = null, flowFrom = null;
+  if (prev) {
+    const gap = (ymdToMs(last.d) - ymdToMs(prev.d)) / 86400000;
+    if (gap >= 28 && gap <= 35) {
+      const rc0 = prev.mcap / prev.mvrv;
+      const rc1 = last.mcap / last.mvrv;
+      flowUsd = rc1 - rc0;
+      flowPct = rc0 > 0 ? (flowUsd / rc0) * 100 : null;
+      flowFrom = prev.d;
+    }
+  }
+  return {
+    asOf: last.d,
+    start: pts[0].d,
+    n: pts.length,
+    mvrv: last.mvrv,
+    mean: mean,
+    sd: sd,
+    z: sd > 0 ? (last.mvrv - mean) / sd : null,
+    realized: last.mcap / last.mvrv / last.sply,
+    flowUsd: flowUsd,
+    flowPct: flowPct,
+    flowFrom: flowFrom
+  };
+}
+async function fetchBgLast(path){
+  const res = await fetch('https://bitcoin-data.com/v1/' + path, { cache: 'no-store' });
+  if (res.status === 429) {
+    const err = new Error('今日额度用尽');
+    err.rate = true;
+    throw err;
+  }
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.json();
+}
+async function fetchSupplyLoss(){
+  const pair = await Promise.all([
+    fetchBgLast('supply-loss/last'),
+    fetchBgLast('supply-current/last')
+  ]);
+  const loss = pair[0], cur = pair[1];
+  if (!loss || !cur || loss.delayed || cur.delayed) throw new Error('数据滞后');
+  const lossBtc = Number(loss.supplyLossBtc);
+  const supplyBtc = Number(cur.supplyCurrent);
+  if (!(lossBtc > 0) || !(supplyBtc > 0) || lossBtc > supplyBtc * 1.02) throw new Error('亏损供应无效');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(loss.d || '')) || loss.d !== cur.d) throw new Error('日期不一致');
+  return {
+    asOf: loss.d,
+    lossBtc: lossBtc,
+    supplyBtc: supplyBtc,
+    lossPct: lossBtc / supplyBtc * 100
+  };
+}
+async function fetchValuation(){
+  const settled = await Promise.allSettled([fetchCmValuation(), fetchSupplyLoss()]);
+  const cmR = settled[0], supR = settled[1];
+  if (cmR.status === 'fulfilled') {
+    valuation.cm = cmR.value;
+    valuation.cmError = '';
+  } else if (!valuation.cm) {
+    valuation.cmError = (cmR.reason && cmR.reason.message) || '拉取失败';
+  }
+  if (supR.status === 'fulfilled') {
+    valuation.supply = supR.value;
+    valuation.supplyError = '';
+  } else if (!valuation.supply) {
+    valuation.supplyError = (supR.reason && supR.reason.message) || '拉取失败';
+  }
+  valuation.phase = valuation.cm ? 'ready' : 'error';
+  if (valuation.cm || valuation.supply) writeValCache();
+  valDomSig = '';
+  renderValuation();
+  pingSynthVal();
+}
+async function loadValuation(){
+  const cache = readValCache();
+  const fresh = !!(cache && (Date.now() - cache.at < VAL_CACHE_MS));
+  if (cache) applyValCache(cache);
+  if (valuation.cm || valuation.supply) {
+    valuation.phase = valuation.cm ? 'ready' : valuation.phase;
+    renderValuation();
+    pingSynthVal();
+  }
+  if (fresh) return;
+  if (valFlight) return valFlight;
+  valFlight = fetchValuation().finally(function(){ valFlight = null; });
+  return valFlight;
 }
 
 function hkTimeHM(ms){
@@ -1887,10 +2486,13 @@ function collectFastBullets(){
     if (nearS) bits.push(one(nearS, '支撑'));
     if (bits.length) bullets.push({slot:'sr', html: 'BTC 最近档：' + bits.join(' · ') + '。'});
   }
+
+  const bottomHtml = bottomSynthHtml();
+  if (bottomHtml) bullets.push({slot:'bottom', html: bottomHtml});
   return bullets;
 }
 
-const SYNTH_ORDER = ['t2', 'rsi', 'range24', 'mood', 'ma', 'cycle', 'sr'];
+const SYNTH_ORDER = ['t2', 'rsi', 'range24', 'mood', 'ma', 'cycle', 'bottom', 'sr'];
 
 function renderSynthCombined(){
   const list = $('synthList');
@@ -1911,7 +2513,7 @@ function renderSynthCombined(){
   const priceTxt = synthFastAt ? ('价位 ' + hkTimeHM(synthFastAt)) : '价位待更新';
   const slowTxt = synthSlowAt ? ('其余 ' + hkTimeHM(synthSlowAt)) : '其余待更新';
   meta.textContent = priceTxt + ' · ' + slowTxt;
-  meta.title = '价位句（24h区间、距MA200、最近档）约每20分钟，或这些档位变化时更新；三选二、RSI、恐惧贪婪、主导率与周期约每2小时';
+  meta.title = '价位句（24h区间、距MA200、最近档、链上估值里的现价偏离）约每20分钟，或这些档位变化时更新；三选二、RSI、恐惧贪婪、主导率与周期约每2小时';
 }
 
 function buildSynthAnalysis(force){
@@ -3382,7 +3984,10 @@ async function loadDailyOne(id){
   } catch (e) {}
   updateBadges(id);
   computeSR(id);
-  if (id === 'BTC') updateBtcAhr999();
+  if (id === 'BTC') {
+    updateBtcAhr999();
+    renderValuation();
+  }
   if (id === selected) renderSelected();
 }
 
@@ -4114,12 +4719,14 @@ renderRsiBand();
 initMetricHelp();
 loadAllDaily();
 loadMarketExtras();
+loadValuation();
 loadNews();
 setInterval(loadNews, 180000);
 setInterval(loadMarketExtras, 120000);
 setInterval(loadAllIntraday, 120000);
 setInterval(() => buildSynthAnalysis(true), SYNTH_MS);
 setInterval(() => refreshFastSynth(true), SYNTH_PRICE_MS);
+setInterval(loadValuation, VAL_CACHE_MS);
 // first synth when metrics arrive; also a delayed retry in case extras lag behind daily
 setTimeout(() => maybeBuildSynth(false), 8000);
 setTimeout(() => maybeBuildSynth(false), 20000);
